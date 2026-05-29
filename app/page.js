@@ -115,6 +115,7 @@ export default function Home() {
         onPlanLoaded={handlePlanLoaded}
         onNewPlan={() => setShowNewPlan(true)}
         hasPlan={!!plan}
+        plan={plan}
       />
 
       {/* New Plan form */}

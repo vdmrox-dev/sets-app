@@ -2,9 +2,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useRef } from "react";
 import { savePlan, clearPlan, clearSessions, saveActiveSession } from "@/lib/storage";
-import { EMPTY_TEMPLATE } from "@/lib/prompt";
 
-export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, hasPlan }) {
+export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, hasPlan, plan }) {
   const fileInputRef = useRef(null);
 
   function handleFileChange(e) {
@@ -56,10 +55,10 @@ export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, hasP
     },
     {
       icon: "↓",
-      label: "Export Template",
-      sublabel: "Download empty JSON schema",
-      onClick: () => { exportTemplate(); onClose(); },
-      show: true,
+      label: "Export Plan",
+      sublabel: "Download current plan as JSON",
+      onClick: () => { exportPlan(); onClose(); },
+      show: hasPlan,
     },
     {
       icon: "⊘",
@@ -71,16 +70,14 @@ export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, hasP
     },
   ];
 
-  function exportTemplate() {
-    const template = {
-      ...EMPTY_TEMPLATE,
-      meta: { ...EMPTY_TEMPLATE.meta, startDate: new Date().toISOString().split("T")[0] },
-    };
-    const blob = new Blob([JSON.stringify(template, null, 2)], { type: "application/json" });
+  function exportPlan() {
+    if (!plan) return;
+    const filename = `sets-${plan.meta.name.toLowerCase().replace(/\s+/g, "-")}.json`;
+    const blob = new Blob([JSON.stringify(plan, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "sets-template.json";
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   }

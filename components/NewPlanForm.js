@@ -246,7 +246,7 @@ export default function NewPlanForm({ onClose, onPlanLoaded }) {
               <div>
                 <p className="text-white font-bold text-base mb-1">Paste the AI response</p>
                 <p className="text-gray-500 text-xs">
-                  Paste the full response from your AI here — SETS will automatically find and import the plan. You don't need to extract anything manually.
+                  Paste the full response from your AI here — SETS will automatically find and import the plan. You don‘t need to extract anything manually.
                 </p>
               </div>
               <textarea
