@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRef } from "react";
 import { savePlan, clearPlan, clearSessions, saveActiveSession } from "@/lib/storage";
 
-export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, hasPlan, plan }) {
+export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, hasPlan, plan, onInstall, showInstallOption }) {
   const fileInputRef = useRef(null);
 
   function handleFileChange(e) {
@@ -59,6 +59,13 @@ export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, hasP
       sublabel: "Download current plan as JSON",
       onClick: () => { exportPlan(); onClose(); },
       show: hasPlan,
+    },
+    {
+      icon: "⬇",
+      label: "Install App",
+      sublabel: "Add SETS to your home screen",
+      onClick: () => { onInstall?.(); onClose(); },
+      show: !!showInstallOption,
     },
     {
       icon: "⊘",
