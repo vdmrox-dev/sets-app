@@ -1,26 +1,57 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Background (40%) */
+  --color-brand-navy: #1B1A17;
+  /* Card surfaces */
+  --color-brand-plum: #2D2B24;
+  /* Secondary accent / orange-red (20%) */
+  --color-brand-maroon: #E45826;
+  /* Primary accent / gold (30%) */
+  --color-brand-red: #F0A500;
+  /* Light / cream (10%) */
+  --color-brand-cream: #E6D5B8;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+html,
+body {
+  height: 100%;
+  overscroll-behavior: none;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #1B1A17;
+  color: #E6D5B8;
+}
+
+::selection {
+  background: #FF204E40;
+  color: white;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #5D0E41;
+  border-radius: 2px;
+}
+
+/* Textarea/input resets */
+textarea,
+input,
+select {
+  appearance: none;
+  -webkit-appearance: none;
 }

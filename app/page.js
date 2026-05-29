@@ -1,65 +1,131 @@
-import Image from "next/image";
+"use client";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { getPlan, getSessions } from "@/lib/storage";
+import EmptyState from "@/components/EmptyState";
+import WorkoutView from "@/components/WorkoutView";
+import PlanStatus from "@/components/PlanStatus";
+import MenuSheet from "@/components/MenuSheet";
+import NewPlanForm from "@/components/NewPlanForm";
 
 export default function Home() {
+  const [plan, setPlan] = useState(undefined); // undefined = loading
+  const [sessions, setSessions] = useState([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showNewPlan, setShowNewPlan] = useState(false);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    setPlan(getPlan());
+    setSessions(getSessions());
+  }, []);
+
+  function handlePlanLoaded(newPlan) {
+    setPlan(newPlan);
+    setSessions(getSessions());
+  }
+
+  function handleSessionComplete(newSessions) {
+    setSessions(newSessions);
+  }
+
+  // Loading state — prevents hydration flash
+  if (plan === undefined) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <motion.div
+          animate={{ opacity: [0.3, 1, 0.3] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className="text-brand-red font-black text-3xl tracking-tighter"
+        >
+          SETS
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <>
+      {/* App shell */}
+      <AnimatePresence mode="wait">
+        {!plan ? (
+          <motion.div
+            key="empty"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <EmptyState
+              onPlanLoaded={handlePlanLoaded}
+              onNewPlan={() => setShowNewPlan(true)}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </motion.div>
+        ) : (
+          <motion.div
+            key="app"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-col min-h-screen"
           >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            {/* Header */}
+            <header className="sticky top-0 z-30 bg-brand-navy/90 backdrop-blur-xl border-b border-white/10">
+              <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto w-full">
+                <div>
+                  <h1 className="text-lg font-black tracking-tighter text-white">
+                    SETS
+                  </h1>
+                  <p className="text-[10px] text-gray-600 font-mono uppercase tracking-widest -mt-0.5">
+                    Workout Manager
+                  </p>
+                </div>
+                <button
+                  onClick={() => setMenuOpen(true)}
+                  className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors"
+                  aria-label="Open menu"
+                >
+                  <svg viewBox="0 0 16 12" className="w-4 h-4" fill="none">
+                    <line x1="0" y1="1" x2="16" y2="1" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                    <line x1="0" y1="6" x2="12" y2="6" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                    <line x1="0" y1="11" x2="16" y2="11" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+            </header>
+
+            {/* Plan status */}
+            <PlanStatus plan={plan} sessions={sessions} />
+
+            {/* Workout view */}
+            <WorkoutView
+              plan={plan}
+              sessions={sessions}
+              onSessionComplete={handleSessionComplete}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Menu sheet */}
+      <MenuSheet
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onPlanLoaded={handlePlanLoaded}
+        onNewPlan={() => setShowNewPlan(true)}
+        hasPlan={!!plan}
+      />
+
+      {/* New Plan form */}
+      <AnimatePresence>
+        {showNewPlan && (
+          <NewPlanForm
+            onClose={() => setShowNewPlan(false)}
+            onPlanLoaded={(plan) => { handlePlanLoaded(plan); setShowNewPlan(false); }}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 }

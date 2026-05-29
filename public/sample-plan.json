@@ -1,0 +1,189 @@
+{
+  "meta": {
+    "name": "Test plan",
+    "edition": "Month 01",
+    "restSeconds": "60-90",
+    "startDate": "2026-05-26",
+    "durationWeeks": 4
+  },
+  "days": [
+    {
+      "id": "push",
+      "label": "Push",
+      "exercises": [
+        {
+          "name": "Incline Dumbbell Press",
+          "sets": 4,
+          "repsMin": 8,
+          "repsMax": 10,
+          "note": "Focus on the clavicular portion of the chest.",
+          "highlight": false
+        },
+        {
+          "name": "Flat Bench Press (Machine or Barbell)",
+          "sets": 3,
+          "repsMin": 10,
+          "repsMax": 12,
+          "note": null,
+          "highlight": false
+        },
+        {
+          "name": "Cable Crossover (High Pulley)",
+          "sets": 3,
+          "repsMin": 12,
+          "repsMax": 15,
+          "note": null,
+          "highlight": false
+        },
+        {
+          "name": "Military Dumbbell Press",
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 10,
+          "note": null,
+          "highlight": false
+        },
+        {
+          "name": "Inclined Lateral Raise",
+          "sets": 4,
+          "repsMin": 12,
+          "repsMax": 15,
+          "note": "Lean body at 70° for greater initial tension.",
+          "highlight": true
+        },
+        {
+          "name": "Skull Crushers (EZ Bar)",
+          "sets": 3,
+          "repsMin": 10,
+          "repsMax": 12,
+          "note": null,
+          "highlight": false
+        },
+        {
+          "name": "Rope Tricep Pushdown",
+          "sets": 3,
+          "repsMin": 12,
+          "repsMax": 15,
+          "note": "Dropset on the last set to failure.",
+          "highlight": false
+        }
+      ]
+    },
+    {
+      "id": "pull",
+      "label": "Pull",
+      "exercises": [
+        {
+          "name": "Wide-Grip Lat Pulldown",
+          "sets": 4,
+          "repsMin": 10,
+          "repsMax": 12,
+          "note": null,
+          "highlight": false
+        },
+        {
+          "name": "Barbell Bent-Over Row",
+          "sets": 4,
+          "repsMin": 8,
+          "repsMax": 10,
+          "note": null,
+          "highlight": false
+        },
+        {
+          "name": "Single-Arm Dumbbell Row",
+          "sets": 3,
+          "repsMin": 10,
+          "repsMax": 12,
+          "note": null,
+          "highlight": false
+        },
+        {
+          "name": "Face Pull (Wide Grip)",
+          "sets": 3,
+          "repsMin": 15,
+          "repsMax": 15,
+          "note": "Focus on rear deltoid and rhomboids.",
+          "highlight": true
+        },
+        {
+          "name": "Barbell Curl",
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 10,
+          "note": null,
+          "highlight": false
+        },
+        {
+          "name": "Hammer Curl",
+          "sets": 3,
+          "repsMin": 10,
+          "repsMax": 12,
+          "note": null,
+          "highlight": false
+        },
+        {
+          "name": "Shoulder Shrug",
+          "sets": 3,
+          "repsMin": 12,
+          "repsMax": 15,
+          "note": null,
+          "highlight": false
+        }
+      ]
+    },
+    {
+      "id": "legs",
+      "label": "Legs",
+      "exercises": [
+        {
+          "name": "Squat (Free or Hack)",
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "note": "Hack squat preferred if lower back discomfort.",
+          "highlight": false
+        },
+        {
+          "name": "Leg Press 45°",
+          "sets": 3,
+          "repsMin": 12,
+          "repsMax": 15,
+          "note": "Position feet high for greater glute focus.",
+          "highlight": false
+        },
+        {
+          "name": "Hip Thrust",
+          "sets": 3,
+          "repsMin": 10,
+          "repsMax": 12,
+          "note": "Hold 1s at peak contraction.",
+          "highlight": true
+        },
+        {
+          "name": "Leg Extension",
+          "sets": 3,
+          "repsMin": 12,
+          "repsMax": 15,
+          "note": null,
+          "highlight": false
+        },
+        {
+          "name": "Seated Leg Curl",
+          "sets": 4,
+          "repsMin": 10,
+          "repsMax": 12,
+          "note": null,
+          "highlight": false
+        },
+        {
+          "name": "Standing Calf Raise",
+          "sets": 4,
+          "repsMin": 15,
+          "repsMax": 20,
+          "note": null,
+          "highlight": false
+        }
+      ]
+    }
+  ]
+}
