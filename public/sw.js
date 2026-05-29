@@ -5,7 +5,13 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) => cache.addAll(PRECACHE))
   );
-  self.skipWaiting();
+  // Don't skipWaiting automatically — wait for the app to signal readiness
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("activate", (event) => {
