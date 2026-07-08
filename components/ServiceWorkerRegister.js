@@ -9,19 +9,17 @@ export default function ServiceWorkerRegister() {
     if (!("serviceWorker" in navigator)) return;
 
     navigator.serviceWorker.register("/sw.js").then((registration) => {
-      // New SW waiting → will activate soon via skipWaiting
-      const checkWaiting = () => {
-        if (registration.waiting) {
-          registration.waiting.postMessage({ type: "SKIP_WAITING" });
-        }
-      };
+      // SW already waiting when the page loaded (most common post-deploy case)
+      if (registration.waiting && navigator.serviceWorker.controller) {
+        setUpdateReady(true);
+      }
 
+      // SW installs while the page is open
       registration.addEventListener("updatefound", () => {
         const newWorker = registration.installing;
         if (!newWorker) return;
         newWorker.addEventListener("statechange", () => {
           if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-            // New version installed, old one still in control
             setUpdateReady(true);
           }
         });
