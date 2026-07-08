@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRef } from "react";
 import { savePlan, clearPlan, clearSessions, saveActiveSession } from "@/lib/storage";
 
-export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, hasPlan, plan, onInstall, showInstallOption }) {
+export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, onEditPlan, hasPlan, plan, onInstall, showInstallOption }) {
   const fileInputRef = useRef(null);
 
   function handleFileChange(e) {
@@ -34,6 +34,11 @@ export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, hasP
 
   function handleNewPlan() {
     onNewPlan();
+    onClose();
+  }
+
+  function handleEditPlan() {
+    onEditPlan?.();
     onClose();
   }
 
@@ -103,7 +108,8 @@ export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, hasP
                 <p className="text-xs text-gray-500 uppercase tracking-widest font-mono px-2 pb-2">Menu</p>
 
                 <MenuItem icon="↑" label="Import Plan" sublabel="Load a JSON training plan" onClick={handleImport} />
-                <MenuItem icon="✦" label="New Plan" sublabel="Generate AI instructions" onClick={handleNewPlan} />
+                <MenuItem icon="✦" label="New Plan" sublabel="Generate with AI or build manually" onClick={handleNewPlan} />
+                {hasPlan && <MenuItem icon="✎" label="Edit Current Plan" sublabel="Modify days and exercises" onClick={handleEditPlan} />}
                 {hasPlan && <MenuItem icon="↓" label="Export Plan" sublabel="Download current plan as JSON" onClick={handleExport} />}
                 {showInstallOption && <MenuItem icon="⬇" label="Install App" sublabel="Add SETS to your home screen" onClick={handleInstall} />}
                 {hasPlan && <MenuItem icon="⊘" label="Clear All Data" sublabel="Remove plan and session history" onClick={handleClearData} danger />}

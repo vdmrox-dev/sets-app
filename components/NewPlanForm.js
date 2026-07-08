@@ -27,8 +27,8 @@ const defaultForm = {
   planDuration: 8,
 };
 
-export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan }) {
-  const [mode, setMode] = useState("ai");
+export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan, editPlan }) {
+  const [mode, setMode] = useState(editPlan ? "manual" : "ai");
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [form, setForm] = useState(defaultForm);
   const [prompt, setPrompt] = useState(null);
@@ -107,13 +107,19 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan }) {
         <div className="border-b border-white/10">
           <div className="flex items-center justify-between px-4 pt-4 pb-3">
             <div>
-              <h2 className="text-lg font-black tracking-tight text-white">New Plan</h2>
+              <h2 className="text-lg font-black tracking-tight text-white">
+                {editPlan ? "Edit Plan" : "New Plan"}
+              </h2>
               <p className="text-xs text-gray-500">
-                {mode === "ai" ? "Generate a plan with AI guidance" : "Build your plan from scratch"}
+                {editPlan
+                  ? "Modify your training days and exercises"
+                  : mode === "ai"
+                  ? "Generate a plan with AI guidance"
+                  : "Build your plan from scratch"}
               </p>
             </div>
             <button
-              onClick={() => mode === "manual" ? setShowCloseConfirm(true) : onClose()}
+              onClick={() => (mode === "manual" || editPlan) ? setShowCloseConfirm(true) : onClose()}
               className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
             >
               ✕
@@ -128,7 +134,7 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan }) {
                 className="overflow-hidden px-4 pb-3"
               >
                 <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-                  <p className="text-xs text-gray-400">Discard your plan?</p>
+                  <p className="text-xs text-gray-400">{editPlan ? "Discard your changes?" : "Discard your plan?"}</p>
                   <div className="flex gap-2 shrink-0">
                     <button
                       onClick={() => setShowCloseConfirm(false)}
@@ -147,8 +153,8 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan }) {
               </motion.div>
             )}
           </AnimatePresence>
-          {/* Mode toggle */}
-          <div className="flex gap-2 px-4 pb-4">
+          {/* Mode toggle — hidden when editing an existing plan */}
+          {!editPlan && <div className="flex gap-2 px-4 pb-4">
             {["ai", "manual"].map((m) => (
               <button
                 key={m}
@@ -163,12 +169,14 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan }) {
                 {m === "ai" ? "Generate with AI" : "Build Manually"}
               </button>
             ))}
-          </div>
+          </div>}
         </div>
 
         {/* Manual mode */}
         {mode === "manual" && (
           <ManualPlanBuilder
+            initialPlan={editPlan ?? null}
+            isEditing={!!editPlan}
             onPlanSaved={(plan) => { onPlanLoaded(plan); onClose(); }}
             hasPlan={hasPlan}
           />

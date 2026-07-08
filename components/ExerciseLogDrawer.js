@@ -20,17 +20,19 @@ export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onClo
 
   const [rows, setRows] = useState(initRows);
 
-  const repsLabel =
-    exercise.repsMin === exercise.repsMax
-      ? String(exercise.repsMin)
-      : `${exercise.repsMin}–${exercise.repsMax}`;
+  const repsLabel = exercise.perSetReps
+    ? exercise.perSetReps.join(", ")
+    : exercise.repsMin === exercise.repsMax
+    ? String(exercise.repsMin)
+    : `${exercise.repsMin}–${exercise.repsMax}`;
 
   function updateRow(i, field, value) {
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
   }
 
   function addRow() {
-    setRows((prev) => [...prev, { weight: "", reps: String(exercise.repsMax) }]);
+    const defaultReps = exercise.perSetReps?.[rows.length] ?? exercise.repsMax ?? 10;
+    setRows((prev) => [...prev, { weight: "", reps: String(defaultReps) }]);
   }
 
   function handleSave() {
@@ -101,7 +103,7 @@ export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onClo
                 <input
                   type="number"
                   inputMode="numeric"
-                  placeholder={String(exercise.repsMax)}
+                  placeholder={String(exercise.perSetReps?.[i] ?? exercise.repsMax ?? 10)}
                   value={row.reps}
                   onChange={(e) => updateRow(i, "reps", e.target.value)}
                   className="w-14 bg-white/5 border border-white/10 rounded-xl px-2 py-2.5 text-white text-sm font-mono text-center focus:outline-none focus:border-brand-red/50 transition-colors"

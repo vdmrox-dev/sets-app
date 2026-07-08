@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, startTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getPlan, getSessions } from "@/lib/storage";
+import { getPlan, getSessions, getActiveSession } from "@/lib/storage";
 import EmptyState from "@/components/EmptyState";
 import WorkoutView from "@/components/WorkoutView";
 import PlanStatus from "@/components/PlanStatus";
@@ -14,6 +14,7 @@ export default function Home() {
   const [sessions, setSessions] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showNewPlan, setShowNewPlan] = useState(false);
+  const [showEditPlan, setShowEditPlan] = useState(false);
   const [showInstall, setShowInstall] = useState(false);
   const { deferredPrompt, ios, dismiss: dismissInstall } = useInstallState();
   const [isStandalone, setIsStandalone] = useState(true);
@@ -36,6 +37,14 @@ export default function Home() {
 
   function handleSessionComplete(newSessions) {
     setSessions(newSessions);
+  }
+
+  function handleEditPlan() {
+    if (getActiveSession()) {
+      alert("Finish your current session before editing the plan.");
+      return;
+    }
+    setShowEditPlan(true);
   }
 
   // Loading state — prevents hydration flash
@@ -140,6 +149,7 @@ export default function Home() {
         onClose={() => setMenuOpen(false)}
         onPlanLoaded={handlePlanLoaded}
         onNewPlan={() => setShowNewPlan(true)}
+        onEditPlan={handleEditPlan}
         hasPlan={!!plan}
         plan={plan}
         showInstallOption={!isStandalone}
@@ -153,6 +163,17 @@ export default function Home() {
             onClose={() => setShowNewPlan(false)}
             onPlanLoaded={(plan) => { handlePlanLoaded(plan); setShowNewPlan(false); }}
             hasPlan={!!plan}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Edit Plan form */}
+      <AnimatePresence>
+        {showEditPlan && plan && (
+          <NewPlanForm
+            editPlan={plan}
+            onClose={() => setShowEditPlan(false)}
+            onPlanLoaded={(updatedPlan) => { handlePlanLoaded(updatedPlan); setShowEditPlan(false); }}
           />
         )}
       </AnimatePresence>

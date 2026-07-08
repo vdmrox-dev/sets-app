@@ -47,10 +47,23 @@ function CheckIcon() {
   );
 }
 
-export default function ManualPlanBuilder({ onPlanSaved, hasPlan }) {
-  const [planName, setPlanName] = useState("");
-  const [durationWeeks, setDurationWeeks] = useState(8);
-  const [days, setDays] = useState([]);
+function planToBuilderDays(plan) {
+  if (!plan) return [];
+  return plan.days.map((day) => ({
+    id: day.id,
+    label: day.label,
+    exercises: day.exercises.map((ex) => ({
+      name: ex.name,
+      sets: ex.sets,
+      perSetReps: ex.perSetReps ?? Array(ex.sets).fill(ex.repsMax ?? 10),
+    })),
+  }));
+}
+
+export default function ManualPlanBuilder({ onPlanSaved, hasPlan, initialPlan, isEditing = false }) {
+  const [planName, setPlanName] = useState(initialPlan?.meta?.name ?? "");
+  const [durationWeeks, setDurationWeeks] = useState(initialPlan?.meta?.durationWeeks ?? 8);
+  const [days, setDays] = useState(() => planToBuilderDays(initialPlan));
   const [newDayName, setNewDayName] = useState("");
 
   // Add / edit form — shared fields
@@ -172,7 +185,7 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan }) {
   // ── Save plan ─────────────────────────────────────────────────────────────
 
   function handleSave() {
-    if (hasPlan) {
+    if (!isEditing && hasPlan) {
       setShowConfirm(true);
     } else {
       doSave();
@@ -549,7 +562,7 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan }) {
                   : "bg-white/10 text-gray-600 cursor-not-allowed",
               ].join(" ")}
             >
-              Save Plan
+              {isEditing ? "Save Changes" : "Save Plan"}
             </motion.button>
           )}
         </AnimatePresence>
