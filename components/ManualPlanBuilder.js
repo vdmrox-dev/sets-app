@@ -25,18 +25,50 @@ function Stepper({ value, onChange, min = 1, max = 30 }) {
   );
 }
 
+function PencilIcon() {
+  return (
+    <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none">
+      <path
+        d="M11.5 2.5a1.414 1.414 0 0 1 2 2L5 13H3v-2L11.5 2.5z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 14 12" className="w-3.5 h-3 " fill="none">
+      <path d="M1 6l4 4 8-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function ManualPlanBuilder({ onPlanSaved, hasPlan }) {
   const [planName, setPlanName] = useState("");
   const [durationWeeks, setDurationWeeks] = useState(8);
   const [days, setDays] = useState([]);
   const [newDayName, setNewDayName] = useState("");
 
+  // Add / edit form — shared fields
+  // formDayId: which day's add form is open (null = none)
+  // editIdx: index of exercise being edited (null = add mode)
   const [formDayId, setFormDayId] = useState(null);
+  const [editIdx, setEditIdx] = useState(null);
   const [exName, setExName] = useState("");
   const [exSets, setExSets] = useState(3);
   const [exReps, setExReps] = useState([10, 10, 10]);
 
+  // Day label inline editing
+  const [editingDayId, setEditingDayId] = useState(null);
+  const [editDayName, setEditDayName] = useState("");
+
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // ── Days ────────────────────────────────────────────────────────────────────
 
   function addDay() {
     const label = newDayName.trim();
@@ -49,17 +81,43 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan }) {
   function removeDay(dayId) {
     setDays((prev) => prev.filter((d) => d.id !== dayId));
     if (formDayId === dayId) resetForm();
+    if (editingDayId === dayId) setEditingDayId(null);
   }
 
-  function openForm(dayId) {
+  function startEditDayLabel(dayId, currentLabel) {
+    setEditingDayId(dayId);
+    setEditDayName(currentLabel);
+  }
+
+  function saveDayLabel(dayId) {
+    const label = editDayName.trim();
+    if (!label) return;
+    setDays((prev) => prev.map((d) => (d.id === dayId ? { ...d, label } : d)));
+    setEditingDayId(null);
+    setEditDayName("");
+  }
+
+  // ── Exercise form ────────────────────────────────────────────────────────────
+
+  function openAddForm(dayId) {
     setFormDayId(dayId);
+    setEditIdx(null);
     setExName("");
     setExSets(3);
     setExReps([10, 10, 10]);
   }
 
+  function openEditForm(dayId, idx, ex) {
+    setFormDayId(dayId);
+    setEditIdx(idx);
+    setExName(ex.name);
+    setExSets(ex.sets);
+    setExReps([...ex.perSetReps]);
+  }
+
   function resetForm() {
     setFormDayId(null);
+    setEditIdx(null);
     setExName("");
     setExSets(3);
     setExReps([10, 10, 10]);
@@ -76,26 +134,44 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan }) {
     });
   }
 
-  function addExercise() {
+  function saveExercise() {
     if (!exName.trim() || !formDayId) return;
     const exercise = { name: exName.trim(), sets: exSets, perSetReps: [...exReps] };
-    setDays((prev) =>
-      prev.map((d) =>
-        d.id === formDayId ? { ...d, exercises: [...d.exercises, exercise] } : d
-      )
-    );
-    setExName("");
-    setExSets(3);
-    setExReps([10, 10, 10]);
+
+    if (editIdx !== null) {
+      // Edit mode — replace in place, preserving order
+      setDays((prev) =>
+        prev.map((d) =>
+          d.id === formDayId
+            ? { ...d, exercises: d.exercises.map((ex, i) => (i === editIdx ? exercise : ex)) }
+            : d
+        )
+      );
+      resetForm();
+    } else {
+      // Add mode — append, keep form open for the next exercise
+      setDays((prev) =>
+        prev.map((d) =>
+          d.id === formDayId ? { ...d, exercises: [...d.exercises, exercise] } : d
+        )
+      );
+      setExName("");
+      setExSets(3);
+      setExReps([10, 10, 10]);
+    }
   }
 
   function removeExercise(dayId, idx) {
+    // Close edit form if it was open for this exercise
+    if (formDayId === dayId && editIdx === idx) resetForm();
     setDays((prev) =>
       prev.map((d) =>
         d.id === dayId ? { ...d, exercises: d.exercises.filter((_, i) => i !== idx) } : d
       )
     );
   }
+
+  // ── Save plan ─────────────────────────────────────────────────────────────
 
   function handleSave() {
     if (hasPlan) {
@@ -120,10 +196,12 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan }) {
   }
 
   const canSave = planName.trim().length > 0 && days.length > 0;
+  const isAddFormOpen = (dayId) => formDayId === dayId && editIdx === null;
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6 pb-4">
 
         {/* Plan name */}
@@ -158,43 +236,162 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan }) {
                 className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden"
               >
                 {/* Day header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-                  <span className="text-white font-bold text-sm uppercase tracking-widest">
-                    {day.label}
-                  </span>
-                  <button
-                    onClick={() => removeDay(day.id)}
-                    className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-xs"
-                  >
-                    ✕
-                  </button>
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10">
+                  {editingDayId === day.id ? (
+                    <>
+                      <input
+                        value={editDayName}
+                        onChange={(e) => setEditDayName(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && saveDayLabel(day.id)}
+                        autoFocus
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-white font-bold text-sm uppercase tracking-widest focus:outline-none focus:border-brand-red/50"
+                      />
+                      <button
+                        onClick={() => setEditingDayId(null)}
+                        className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-xs shrink-0"
+                      >
+                        ✕
+                      </button>
+                      <button
+                        onClick={() => saveDayLabel(day.id)}
+                        className="w-7 h-7 rounded-full bg-brand-red/20 border border-brand-red/40 flex items-center justify-center text-brand-red hover:bg-brand-red/30 transition-colors shrink-0"
+                      >
+                        <CheckIcon />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-white font-bold text-sm uppercase tracking-widest flex-1">
+                        {day.label}
+                      </span>
+                      <button
+                        onClick={() => startEditDayLabel(day.id, day.label)}
+                        className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-colors shrink-0"
+                        title="Rename day"
+                      >
+                        <PencilIcon />
+                      </button>
+                      <button
+                        onClick={() => removeDay(day.id)}
+                        className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-xs shrink-0"
+                        title="Remove day"
+                      >
+                        ✕
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 {/* Exercise list */}
                 {day.exercises.length > 0 && (
                   <div className="divide-y divide-white/5">
-                    {day.exercises.map((ex, idx) => (
-                      <div key={idx} className="flex items-center justify-between px-4 py-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-gray-100 text-sm font-semibold truncate">{ex.name}</p>
-                          <p className="text-brand-red text-xs font-mono font-bold mt-0.5">
-                            {ex.sets} × {ex.perSetReps.join(", ")}
-                          </p>
+                    {day.exercises.map((ex, idx) => {
+                      const isEditing = formDayId === day.id && editIdx === idx;
+
+                      if (isEditing) {
+                        return (
+                          <motion.div
+                            key={idx}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="px-4 py-4 space-y-4 bg-white/3"
+                          >
+                            <input
+                              type="text"
+                              value={exName}
+                              onChange={(e) => setExName(e.target.value)}
+                              onKeyDown={(e) => e.key === "Enter" && saveExercise()}
+                              autoFocus
+                              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-brand-red/50"
+                            />
+
+                            <div className="space-y-1.5">
+                              <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Sets</p>
+                              <Stepper value={exSets} onChange={updateSets} min={1} max={10} />
+                            </div>
+
+                            <div className="space-y-2">
+                              <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Reps per set</p>
+                              <div className="space-y-2.5">
+                                {exReps.map((reps, i) => (
+                                  <div key={i} className="flex items-center gap-3">
+                                    <span className="text-gray-600 text-xs w-10 shrink-0 font-mono">
+                                      Set {i + 1}
+                                    </span>
+                                    <Stepper
+                                      value={reps}
+                                      onChange={(val) =>
+                                        setExReps((prev) =>
+                                          prev.map((r, ri) => (ri === i ? val : r))
+                                        )
+                                      }
+                                      min={1}
+                                      max={50}
+                                    />
+                                    <span className="text-gray-600 text-xs">reps</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2 pt-1">
+                              <button
+                                onClick={resetForm}
+                                className="flex-1 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 text-sm font-semibold active:scale-95 transition-transform"
+                              >
+                                Cancel
+                              </button>
+                              <motion.button
+                                whileTap={{ scale: 0.97 }}
+                                onClick={saveExercise}
+                                disabled={!exName.trim()}
+                                className={[
+                                  "flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors",
+                                  exName.trim()
+                                    ? "bg-brand-red text-white"
+                                    : "bg-white/10 text-gray-600 cursor-not-allowed",
+                                ].join(" ")}
+                              >
+                                Save
+                              </motion.button>
+                            </div>
+                          </motion.div>
+                        );
+                      }
+
+                      return (
+                        <div key={idx} className="flex items-center justify-between px-4 py-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-gray-100 text-sm font-semibold truncate">{ex.name}</p>
+                            <p className="text-brand-red text-xs font-mono font-bold mt-0.5">
+                              {ex.sets} × {ex.perSetReps.join(", ")}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1.5 ml-3 shrink-0">
+                            <button
+                              onClick={() => openEditForm(day.id, idx, ex)}
+                              className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-colors"
+                              title="Edit exercise"
+                            >
+                              <PencilIcon />
+                            </button>
+                            <button
+                              onClick={() => removeExercise(day.id, idx)}
+                              className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-xs"
+                              title="Remove exercise"
+                            >
+                              ✕
+                            </button>
+                          </div>
                         </div>
-                        <button
-                          onClick={() => removeExercise(day.id, idx)}
-                          className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-xs ml-3 shrink-0"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 
-                {/* Exercise form or Add button */}
+                {/* Add form or Add button */}
                 <AnimatePresence mode="wait">
-                  {formDayId === day.id ? (
+                  {isAddFormOpen(day.id) ? (
                     <motion.div
                       key="form"
                       initial={{ opacity: 0 }}
@@ -206,23 +403,19 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan }) {
                         type="text"
                         value={exName}
                         onChange={(e) => setExName(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && addExercise()}
+                        onKeyDown={(e) => e.key === "Enter" && saveExercise()}
                         placeholder="Exercise name, e.g. Bench Press"
                         autoFocus
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-brand-red/50"
                       />
 
                       <div className="space-y-1.5">
-                        <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">
-                          Sets
-                        </p>
+                        <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Sets</p>
                         <Stepper value={exSets} onChange={updateSets} min={1} max={10} />
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">
-                          Reps per set
-                        </p>
+                        <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Reps per set</p>
                         <div className="space-y-2.5">
                           {exReps.map((reps, i) => (
                             <div key={i} className="flex items-center gap-3">
@@ -233,7 +426,7 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan }) {
                                 value={reps}
                                 onChange={(val) =>
                                   setExReps((prev) =>
-                                    prev.map((r, idx) => (idx === i ? val : r))
+                                    prev.map((r, ri) => (ri === i ? val : r))
                                   )
                                 }
                                 min={1}
@@ -254,7 +447,7 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan }) {
                         </button>
                         <motion.button
                           whileTap={{ scale: 0.97 }}
-                          onClick={addExercise}
+                          onClick={saveExercise}
                           disabled={!exName.trim()}
                           className={[
                             "flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors",
@@ -272,7 +465,7 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan }) {
                       key="add-btn"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      onClick={() => openForm(day.id)}
+                      onClick={() => openAddForm(day.id)}
                       className="w-full px-4 py-3 text-left text-brand-red text-sm font-semibold flex items-center gap-2 border-t border-white/10 hover:bg-white/5 transition-colors active:bg-white/10"
                     >
                       <span className="text-lg leading-none">+</span>
