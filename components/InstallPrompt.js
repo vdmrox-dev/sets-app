@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 function isIOS() {
@@ -21,7 +21,9 @@ export function useInstallState() {
     if (localStorage.getItem("sets_install_dismissed")) return;
 
     if (isIOS()) {
-      setState({ deferredPrompt: null, showButton: true, ios: true });
+      startTransition(() => {
+        setState({ deferredPrompt: null, showButton: true, ios: true });
+      });
       return;
     }
 

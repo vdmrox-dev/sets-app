@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, startTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ExerciseCard from "./ExerciseCard";
+import ExerciseLogDrawer from "./ExerciseLogDrawer";
 import {
   isDayCompletedToday,
   addSession,
@@ -23,16 +24,19 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
   const [activeSession, setActiveSession] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [showFinishAnimation, setShowFinishAnimation] = useState(false);
+  const [openExercise, setOpenExercise] = useState(null);
   const timerRef = useRef(null);
+  const [finishedDuration, setFinishedDuration] = useState(0);
 
   // Restore active session from storage on mount
   useEffect(() => {
     const stored = getActiveSession();
     if (stored) {
-      setActiveSession(stored);
-      setActiveTab(stored.dayId);
-      const secondsElapsed = Math.floor((Date.now() - stored.startTime) / 1000);
-      setElapsed(secondsElapsed);
+      startTransition(() => {
+        setActiveSession(stored);
+        setActiveTab(stored.dayId);
+        setElapsed(Math.floor((Date.now() - stored.startTime) / 1000));
+      });
     }
   }, []);
 
@@ -48,6 +52,21 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
     return () => clearInterval(timerRef.current);
   }, [activeSession]);
 
+  // Re-sync elapsed from startTime when the PWA returns to foreground.
+  // Mobile browsers throttle/pause setInterval in the background, so the
+  // interval-based counter drifts. visibilitychange fires reliably when the
+  // user switches back, giving us a chance to correct elapsed from the
+  // authoritative startTime timestamp.
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible" && activeSession) {
+        setElapsed(Math.floor((Date.now() - activeSession.startTime) / 1000));
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [activeSession]);
+
   const currentDay = plan.days.find((d) => d.id === activeTab);
   const isCurrentDaySession = activeSession?.dayId === activeTab;
   const isDoneToday = !activeSession && isDayCompletedToday(activeTab);
@@ -58,33 +77,45 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
       dayLabel: currentDay?.label ?? activeTab,
       startTime: Date.now(),
       checked: [],
+      setLogs: {},
     };
     setActiveSession(session);
     saveActiveSession(session);
     setElapsed(0);
   }
 
-  function toggleExercise(exerciseName) {
+  function handleSaveLog(exerciseName, rows) {
     setActiveSession((prev) => {
       if (!prev) return prev;
       const checked = prev.checked.includes(exerciseName)
-        ? prev.checked.filter((n) => n !== exerciseName)
+        ? prev.checked
         : [...prev.checked, exerciseName];
-      const updated = { ...prev, checked };
+      const updated = {
+        ...prev,
+        checked,
+        setLogs: { ...(prev.setLogs || {}), [exerciseName]: rows },
+      };
       saveActiveSession(updated);
       return updated;
     });
+    setOpenExercise(null);
   }
 
   const finishSession = useCallback(() => {
     if (!activeSession) return;
+    // Derive duration from startTime rather than the elapsed counter so that
+    // any time spent with the app backgrounded (where setInterval was throttled)
+    // is correctly included in the final total.
+    const finalDuration = Math.floor((Date.now() - activeSession.startTime) / 1000);
+    setFinishedDuration(finalDuration);
     const session = {
       id: `${Date.now()}`,
       date: todayString(),
       dayId: activeSession.dayId,
       dayLabel: activeSession.dayLabel,
-      duration: elapsed,
+      duration: finalDuration,
       completedExercises: activeSession.checked,
+      setLogs: activeSession.setLogs || {},
     };
     const newSessions = addSession(session);
     saveActiveSession(null);
@@ -95,7 +126,7 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
       setShowFinishAnimation(false);
       onSessionComplete(newSessions);
     }, 2200);
-  }, [activeSession, elapsed, onSessionComplete]);
+  }, [activeSession, onSessionComplete]);
 
   return (
     <div className="flex flex-col flex-1 relative pb-28">
@@ -174,11 +205,11 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
                 exercise={exercise}
                 index={i}
                 isSession={isCurrentDaySession}
-                isChecked={
+                isDone={
                   isCurrentDaySession &&
                   activeSession.checked.includes(exercise.name)
                 }
-                onToggle={() => toggleExercise(exercise.name)}
+                onOpen={() => setOpenExercise(exercise)}
               />
             ))}
           </motion.div>
@@ -223,6 +254,18 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
           )}
         </div>
       </div>
+
+      {/* Exercise log drawer */}
+      <AnimatePresence>
+        {openExercise && activeSession && (
+          <ExerciseLogDrawer
+            exercise={openExercise}
+            existingLog={activeSession.setLogs?.[openExercise.name] ?? null}
+            onSave={(rows) => handleSaveLog(openExercise.name, rows)}
+            onClose={() => setOpenExercise(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Finish animation overlay */}
       <AnimatePresence>
@@ -269,7 +312,7 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
               >
                 <p className="text-white font-black text-2xl tracking-tight">Session done.</p>
                 <p className="text-gray-500 text-sm mt-1">
-                  Logged in {formatTime(elapsed)}
+                  Logged in {formatTime(finishedDuration)}
                 </p>
               </motion.div>
             </div>

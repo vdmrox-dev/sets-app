@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useRef } from "react";
 import { savePlan } from "@/lib/storage";
 
-export default function EmptyState({ onPlanLoaded, onNewPlan }) {
+export default function EmptyState({ onPlanLoaded, onNewPlan, onInstall, isStandalone }) {
   const fileInputRef = useRef(null);
 
   function handleFileChange(e) {
@@ -80,6 +80,18 @@ export default function EmptyState({ onPlanLoaded, onNewPlan }) {
           >
             New Plan
           </button>
+          {!isStandalone && (
+            <button
+              onClick={onInstall}
+              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 font-bold py-4 rounded-2xl transition-all active:scale-95 uppercase tracking-widest text-sm flex items-center justify-center gap-2"
+            >
+              <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" fill="none">
+                <path d="M8 2v8M5 7l3 3 3-3" stroke="#F0A500" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1" stroke="#F0A500" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              Install App
+            </button>
+          )}
         </motion.div>
 
         <motion.p

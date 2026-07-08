@@ -15,7 +15,7 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showNewPlan, setShowNewPlan] = useState(false);
   const [showInstall, setShowInstall] = useState(false);
-  const { deferredPrompt, showButton: showInstallButton, ios, dismiss: dismissInstall } = useInstallState();
+  const { deferredPrompt, ios, dismiss: dismissInstall } = useInstallState();
   const [isStandalone, setIsStandalone] = useState(true);
 
   useEffect(() => {
@@ -68,6 +68,8 @@ export default function Home() {
             <EmptyState
               onPlanLoaded={handlePlanLoaded}
               onNewPlan={() => setShowNewPlan(true)}
+              onInstall={() => setShowInstall(true)}
+              isStandalone={isStandalone}
             />
           </motion.div>
         ) : (
@@ -91,24 +93,19 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <AnimatePresence>
-                    {showInstallButton && (
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        onClick={() => setShowInstall(true)}
-                        className="w-9 h-9 rounded-xl bg-brand-red/15 hover:bg-brand-red/25 border border-brand-red/30 flex items-center justify-center transition-colors"
-                        aria-label="Install app"
-                        title="Install SETS"
-                      >
-                        <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none">
-                          <path d="M8 2v8M5 7l3 3 3-3" stroke="#F0A500" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1" stroke="#F0A500" strokeWidth="1.5" strokeLinecap="round"/>
-                        </svg>
-                      </motion.button>
-                    )}
-                  </AnimatePresence>
+                  {!isStandalone && (
+                    <button
+                      onClick={() => setShowInstall(true)}
+                      className="w-9 h-9 rounded-xl bg-brand-red/15 hover:bg-brand-red/25 border border-brand-red/30 flex items-center justify-center transition-colors"
+                      aria-label="Install app"
+                      title="Install SETS"
+                    >
+                      <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none">
+                        <path d="M8 2v8M5 7l3 3 3-3" stroke="#F0A500" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1" stroke="#F0A500" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                    </button>
+                  )}
                   <button
                     onClick={() => setMenuOpen(true)}
                     className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors"
@@ -155,6 +152,7 @@ export default function Home() {
           <NewPlanForm
             onClose={() => setShowNewPlan(false)}
             onPlanLoaded={(plan) => { handlePlanLoaded(plan); setShowNewPlan(false); }}
+            hasPlan={!!plan}
           />
         )}
       </AnimatePresence>

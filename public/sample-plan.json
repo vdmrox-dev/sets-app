@@ -2,7 +2,6 @@
   "meta": {
     "name": "Test plan",
     "edition": "Month 01",
-    "restSeconds": "60-90",
     "startDate": "2026-05-26",
     "durationWeeks": 4
   },
