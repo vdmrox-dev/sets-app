@@ -149,15 +149,13 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan }) {
       );
       resetForm();
     } else {
-      // Add mode — append, keep form open for the next exercise
+      // Add mode — append, then close the form
       setDays((prev) =>
         prev.map((d) =>
           d.id === formDayId ? { ...d, exercises: [...d.exercises, exercise] } : d
         )
       );
-      setExName("");
-      setExSets(3);
-      setExReps([10, 10, 10]);
+      resetForm();
     }
   }
 
