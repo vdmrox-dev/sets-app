@@ -86,9 +86,6 @@ export default function PlanStatus({ plan, sessions }) {
     };
   }, [plan, sessions, reminderDismissed]);
 
-  const restLabel = plan.meta.restSeconds
-    ? `${plan.meta.restSeconds}s rest`
-    : null;
 
   return (
     <div className="px-4 pt-3 space-y-3">
@@ -109,7 +106,7 @@ export default function PlanStatus({ plan, sessions }) {
                     : "You've been on this plan a while — consider an update."}
                 </p>
                 <p className="text-gray-500 text-xs mt-0.5">
-                  Tap the menu → New Plan when you're ready.
+                  Tap the menu → New Plan when you&apos;re ready.
                 </p>
               </div>
               <button
@@ -130,12 +127,6 @@ export default function PlanStatus({ plan, sessions }) {
               <span className="text-[10px] text-gray-500 uppercase tracking-widest font-mono">
                 Week {stats.currentWeek} / {stats.durationWeeks}
               </span>
-              {restLabel && (
-                <>
-                  <span className="text-gray-700">·</span>
-                  <span className="text-[10px] text-gray-500 font-mono">{restLabel}</span>
-                </>
-              )}
             </div>
             <MarqueeText
               text={plan.meta.name}

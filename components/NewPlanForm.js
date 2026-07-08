@@ -3,6 +3,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { generatePlanPrompt } from "@/lib/prompt";
 import { savePlan } from "@/lib/storage";
+import ManualPlanBuilder from "./ManualPlanBuilder";
 
 const GOALS = ["Hypertrophy", "Strength", "Fat Loss", "General Fitness"];
 const LEVELS = ["Beginner", "Intermediate", "Advanced"];
@@ -26,7 +27,9 @@ const defaultForm = {
   planDuration: 8,
 };
 
-export default function NewPlanForm({ onClose, onPlanLoaded }) {
+export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan }) {
+  const [mode, setMode] = useState("ai");
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [form, setForm] = useState(defaultForm);
   const [prompt, setPrompt] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -101,21 +104,78 @@ export default function NewPlanForm({ onClose, onPlanLoaded }) {
         className="fixed inset-0 z-50 bg-brand-navy flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
-          <div>
-            <h2 className="text-lg font-black tracking-tight text-white">New Plan</h2>
-            <p className="text-xs text-gray-500">Fill in your profile to generate AI instructions</p>
+        <div className="border-b border-white/10">
+          <div className="flex items-center justify-between px-4 pt-4 pb-3">
+            <div>
+              <h2 className="text-lg font-black tracking-tight text-white">New Plan</h2>
+              <p className="text-xs text-gray-500">
+                {mode === "ai" ? "Generate a plan with AI guidance" : "Build your plan from scratch"}
+              </p>
+            </div>
+            <button
+              onClick={() => mode === "manual" ? setShowCloseConfirm(true) : onClose()}
+              className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-          >
-            ✕
-          </button>
+          <AnimatePresence>
+            {showCloseConfirm && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden px-4 pb-3"
+              >
+                <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                  <p className="text-xs text-gray-400">Discard your plan?</p>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => setShowCloseConfirm(false)}
+                      className="px-3 py-1.5 rounded-lg bg-white/10 text-gray-300 text-xs font-semibold"
+                    >
+                      Keep editing
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="px-3 py-1.5 rounded-lg bg-brand-red text-white text-xs font-bold"
+                    >
+                      Discard
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {/* Mode toggle */}
+          <div className="flex gap-2 px-4 pb-4">
+            {["ai", "manual"].map((m) => (
+              <button
+                key={m}
+                onClick={() => { setMode(m); setShowCloseConfirm(false); }}
+                className={[
+                  "flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all",
+                  mode === m
+                    ? "bg-brand-red/20 border border-brand-red text-brand-red"
+                    : "bg-white/5 border border-white/10 text-gray-500 hover:text-gray-300",
+                ].join(" ")}
+              >
+                {m === "ai" ? "Generate with AI" : "Build Manually"}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6 pb-24">
+        {/* Manual mode */}
+        {mode === "manual" && (
+          <ManualPlanBuilder
+            onPlanSaved={(plan) => { onPlanLoaded(plan); onClose(); }}
+            hasPlan={hasPlan}
+          />
+        )}
+
+        {/* AI mode content */}
+        {mode === "ai" && <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6 pb-24">
           {!prompt ? (
             <>
               {/* Goal */}
@@ -330,10 +390,10 @@ export default function NewPlanForm({ onClose, onPlanLoaded }) {
               </button>
             </motion.div>
           )}
-        </div>
+        </div>}
 
-        {/* Footer button (only on form view) */}
-        {!prompt && (
+        {/* Footer button (AI mode, form view only) */}
+        {mode === "ai" && !prompt && (
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-brand-navy/90 backdrop-blur-xl border-t border-white/10">
             <button
               onClick={handleGenerate}
