@@ -81,6 +81,23 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan, initialPlan, i
 
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Pending inline delete confirmation: null | { type: 'day', dayId } | { type: 'exercise', dayId, idx }
+  const [pendingDelete, setPendingDelete] = useState(null);
+
+  function confirmDelete() {
+    if (!pendingDelete) return;
+    if (pendingDelete.type === "day") {
+      removeDay(pendingDelete.dayId);
+    } else {
+      removeExercise(pendingDelete.dayId, pendingDelete.idx);
+    }
+    setPendingDelete(null);
+  }
+
+  function cancelDelete() {
+    setPendingDelete(null);
+  }
+
   // ── Days ────────────────────────────────────────────────────────────────────
 
   function addDay() {
@@ -113,6 +130,7 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan, initialPlan, i
   // ── Exercise form ────────────────────────────────────────────────────────────
 
   function openAddForm(dayId) {
+    setPendingDelete(null);
     setFormDayId(dayId);
     setEditIdx(null);
     setExName("");
@@ -121,6 +139,7 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan, initialPlan, i
   }
 
   function openEditForm(dayId, idx, ex) {
+    setPendingDelete(null);
     setFormDayId(dayId);
     setEditIdx(idx);
     setExName(ex.name);
@@ -283,8 +302,8 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan, initialPlan, i
                         <PencilIcon />
                       </button>
                       <button
-                        onClick={() => removeDay(day.id)}
-                        className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-xs shrink-0"
+                        onClick={() => setPendingDelete({ type: "day", dayId: day.id })}
+                        className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-gray-500 hover:text-red-400 transition-colors text-xs shrink-0"
                         title="Remove day"
                       >
                         ✕
@@ -292,6 +311,36 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan, initialPlan, i
                     </>
                   )}
                 </div>
+
+                {/* Day delete confirmation */}
+                <AnimatePresence>
+                  {pendingDelete?.type === "day" && pendingDelete.dayId === day.id && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mx-4 mb-3 bg-red-900/20 border border-red-500/30 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                        <p className="text-xs text-red-300">Remove &ldquo;{day.label}&rdquo; and all its exercises?</p>
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            onClick={cancelDelete}
+                            className="px-3 py-1 rounded-lg bg-white/10 text-gray-400 text-xs font-semibold active:scale-95 transition-transform"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={confirmDelete}
+                            className="px-3 py-1 rounded-lg bg-red-600 text-white text-xs font-bold active:scale-95 transition-transform"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Exercise list */}
                 {day.exercises.length > 0 && (
@@ -371,29 +420,63 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan, initialPlan, i
                       }
 
                       return (
-                        <div key={idx} className="flex items-center justify-between px-4 py-3">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-gray-100 text-sm font-semibold truncate">{ex.name}</p>
-                            <p className="text-brand-red text-xs font-mono font-bold mt-0.5">
-                              {ex.sets} × {ex.perSetReps.join(", ")}
-                            </p>
+                        <div key={idx}>
+                          <div className="flex items-center justify-between px-4 py-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-gray-100 text-sm font-semibold truncate">{ex.name}</p>
+                              <p className="text-brand-red text-xs font-mono font-bold mt-0.5">
+                                {ex.sets} × {ex.perSetReps.join(", ")}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1.5 ml-3 shrink-0">
+                              <button
+                                onClick={() => openEditForm(day.id, idx, ex)}
+                                className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-colors"
+                                title="Edit exercise"
+                              >
+                                <PencilIcon />
+                              </button>
+                              <button
+                                onClick={() => setPendingDelete({ type: "exercise", dayId: day.id, idx })}
+                                className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-gray-500 hover:text-red-400 transition-colors text-xs"
+                                title="Remove exercise"
+                              >
+                                ✕
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1.5 ml-3 shrink-0">
-                            <button
-                              onClick={() => openEditForm(day.id, idx, ex)}
-                              className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-colors"
-                              title="Edit exercise"
-                            >
-                              <PencilIcon />
-                            </button>
-                            <button
-                              onClick={() => removeExercise(day.id, idx)}
-                              className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-xs"
-                              title="Remove exercise"
-                            >
-                              ✕
-                            </button>
-                          </div>
+
+                          {/* Exercise delete confirmation */}
+                          <AnimatePresence>
+                            {pendingDelete?.type === "exercise" &&
+                              pendingDelete.dayId === day.id &&
+                              pendingDelete.idx === idx && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="mx-4 mb-3 bg-red-900/20 border border-red-500/30 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                                    <p className="text-xs text-red-300">Remove &ldquo;{ex.name}&rdquo;?</p>
+                                    <div className="flex gap-2 shrink-0">
+                                      <button
+                                        onClick={cancelDelete}
+                                        className="px-3 py-1 rounded-lg bg-white/10 text-gray-400 text-xs font-semibold active:scale-95 transition-transform"
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        onClick={confirmDelete}
+                                        className="px-3 py-1 rounded-lg bg-red-600 text-white text-xs font-bold active:scale-95 transition-transform"
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                          </AnimatePresence>
                         </div>
                       );
                     })}
