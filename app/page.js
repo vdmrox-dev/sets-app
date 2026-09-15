@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, startTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getPlan, getSessions, getActiveSession } from "@/lib/storage";
+import { getPlan, getSessions, getActiveSession, deleteSession } from "@/lib/storage";
 import EmptyState from "@/components/EmptyState";
 import WorkoutView from "@/components/WorkoutView";
 import PlanStatus from "@/components/PlanStatus";
@@ -18,6 +18,9 @@ export default function Home() {
   const [showInstall, setShowInstall] = useState(false);
   const { deferredPrompt, ios, dismiss: dismissInstall } = useInstallState();
   const [isStandalone, setIsStandalone] = useState(true);
+  // Bumped whenever a new plan replaces the old one. Used as a key to remount
+  // the plan views so no state survives from the previous plan.
+  const [planEpoch, setPlanEpoch] = useState(0);
 
   useEffect(() => {
     startTransition(() => {
@@ -30,13 +33,23 @@ export default function Home() {
     });
   }, []);
 
-  function handlePlanLoaded(newPlan) {
+  // `startsOver` separates a plan that replaced the old one (imported,
+  // generated, built, or cleared) from an edit to the active plan. A fresh plan
+  // has already had its session history wiped in storage by startNewPlan, and
+  // bumping the epoch remounts the views so no stale progress lingers on screen.
+  function handlePlanLoaded(newPlan, { startsOver = true } = {}) {
     setPlan(newPlan);
+    if (!startsOver) return;
     setSessions(getSessions());
+    setPlanEpoch((n) => n + 1);
   }
 
   function handleSessionComplete(newSessions) {
     setSessions(newSessions);
+  }
+
+  function handleDeleteSession(sessionId) {
+    setSessions(deleteSession(sessionId));
   }
 
   function handleEditPlan() {
@@ -131,10 +144,16 @@ export default function Home() {
             </header>
 
             {/* Plan status */}
-            <PlanStatus plan={plan} sessions={sessions} />
+            <PlanStatus
+              key={`status-${planEpoch}`}
+              plan={plan}
+              sessions={sessions}
+              onDeleteSession={handleDeleteSession}
+            />
 
             {/* Workout view */}
             <WorkoutView
+              key={`workout-${planEpoch}`}
               plan={plan}
               sessions={sessions}
               onSessionComplete={handleSessionComplete}
@@ -173,7 +192,7 @@ export default function Home() {
           <NewPlanForm
             editPlan={plan}
             onClose={() => setShowEditPlan(false)}
-            onPlanLoaded={(updatedPlan) => { handlePlanLoaded(updatedPlan); setShowEditPlan(false); }}
+            onPlanLoaded={(updatedPlan, opts) => { handlePlanLoaded(updatedPlan, opts); setShowEditPlan(false); }}
           />
         )}
       </AnimatePresence>

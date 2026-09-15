@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { generatePlanPrompt } from "@/lib/prompt";
-import { savePlan } from "@/lib/storage";
+import { startNewPlan, isValidPlanShape } from "@/lib/storage";
+import { SPLITS, BODY_PART_COUNTS, isBodyPart } from "@/lib/splits";
 import ManualPlanBuilder from "./ManualPlanBuilder";
 
 const GOALS = ["Hypertrophy", "Strength", "Fat Loss", "General Fitness"];
@@ -18,7 +19,8 @@ const EQUIPMENT = [
 
 const defaultForm = {
   goal: "",
-  daysPerWeek: 3,
+  split: "",
+  partCount: 5,
   sessionDuration: "60",
   level: "",
   age: "",
@@ -55,12 +57,11 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan, editPlan }
     setPasteError(null);
     try {
       const plan = extractJsonFromText(pasteValue);
-      if (!plan.meta || !plan.days) {
+      if (!isValidPlanShape(plan)) {
         setPasteError("The plan is missing required fields. Make sure you copied the full AI response.");
         return;
       }
-      savePlan(plan);
-      onPlanLoaded(plan);
+      onPlanLoaded(startNewPlan(plan));
       onClose();
     } catch {
       setPasteError("Couldn't find a valid plan in your text. Try copying the AI response again.");
@@ -77,8 +78,8 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan, editPlan }
   }
 
   function handleGenerate() {
-    if (!form.goal || !form.level || !form.age || form.equipment.length === 0) {
-      alert("Please fill in Goal, Level, Age, and at least one equipment option.");
+    if (!form.goal || !form.split || !form.level || !form.age || form.equipment.length === 0) {
+      alert("Please fill in Goal, Workout split, Level, Age, and at least one equipment option.");
       return;
     }
     setPrompt(generatePlanPrompt(form));
@@ -92,7 +93,7 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan, editPlan }
   }
 
   const isValid =
-    form.goal && form.level && form.age && form.equipment.length > 0;
+    form.goal && form.split && form.level && form.age && form.equipment.length > 0;
 
   return (
     <AnimatePresence>
@@ -177,7 +178,7 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan, editPlan }
           <ManualPlanBuilder
             initialPlan={editPlan ?? null}
             isEditing={!!editPlan}
-            onPlanSaved={(plan) => { onPlanLoaded(plan); onClose(); }}
+            onPlanSaved={(plan, opts) => { onPlanLoaded(plan, opts); onClose(); }}
             hasPlan={hasPlan}
           />
         )}
@@ -201,21 +202,53 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan, editPlan }
                 </div>
               </Field>
 
-              {/* Days per week */}
-              <Field label="Training days per week">
-                <div className="flex gap-2">
-                  {[2, 3, 4, 5, 6].map((n) => (
+              {/* Workout split */}
+              <Field
+                label="Workout split"
+                hint="How the plan divides muscle groups across workouts. You decide how often you train — the workouts simply rotate in order."
+              >
+                <div className="space-y-2">
+                  {SPLITS.map((s) => (
                     <ToggleButton
-                      key={n}
-                      active={form.daysPerWeek === n}
-                      onClick={() => setForm((f) => ({ ...f, daysPerWeek: n }))}
-                      small
+                      key={s.id}
+                      active={form.split === s.id}
+                      onClick={() => setForm((f) => ({ ...f, split: s.id }))}
+                      full
                     >
-                      {n}
+                      <span className="block">{s.label}</span>
+                      <span className="block text-xs font-normal opacity-60 mt-0.5">{s.blurb}</span>
                     </ToggleButton>
                   ))}
                 </div>
               </Field>
+
+              {/* Body Part count — only this split needs a follow-up */}
+              <AnimatePresence>
+                {isBodyPart(form.split) && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="overflow-hidden"
+                  >
+                    <Field label="How many body parts?">
+                      <div className="flex gap-2">
+                        {BODY_PART_COUNTS.map((n) => (
+                          <ToggleButton
+                            key={n}
+                            active={form.partCount === n}
+                            onClick={() => setForm((f) => ({ ...f, partCount: n }))}
+                            small
+                          >
+                            {n}
+                          </ToggleButton>
+                        ))}
+                      </div>
+                    </Field>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Session duration */}
               <Field label="Session duration (minutes)">
@@ -422,14 +455,17 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan, editPlan }
   );
 }
 
-function Field({ label, optional, children }) {
+function Field({ label, optional, hint, children }) {
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <label className="text-sm font-semibold text-gray-200">{label}</label>
-        {optional && (
-          <span className="text-xs text-gray-600 bg-white/5 px-2 py-0.5 rounded-full">optional</span>
-        )}
+      <div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-semibold text-gray-200">{label}</label>
+          {optional && (
+            <span className="text-xs text-gray-600 bg-white/5 px-2 py-0.5 rounded-full">optional</span>
+          )}
+        </div>
+        {hint && <p className="text-gray-600 text-xs mt-1 leading-snug">{hint}</p>}
       </div>
       {children}
     </div>

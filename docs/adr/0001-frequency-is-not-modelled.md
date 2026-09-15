@@ -1,0 +1,3 @@
+# Training frequency is not modelled; splits define sequence only
+
+A Workout Split determines which Workouts a Plan contains and the order they are performed in, but the app does not record or target how often the user trains — the user advances through the rotation at whatever cadence they choose. Consequently plan progress is measured in elapsed days against the Plan's duration, and Sessions are reported as a descriptive tally (total plus weekly average) rather than against a target. We rejected storing a `sessionsPerWeek` field, which would have preserved the projected-end-date drift feature, because it would make the app assert a frequency commitment it has no business owning.

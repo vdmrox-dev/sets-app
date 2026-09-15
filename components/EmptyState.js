@@ -1,7 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import { useRef } from "react";
-import { savePlan } from "@/lib/storage";
+import { startNewPlan, isValidPlanShape } from "@/lib/storage";
 
 export default function EmptyState({ onPlanLoaded, onNewPlan, onInstall, isStandalone }) {
   const fileInputRef = useRef(null);
@@ -13,12 +13,11 @@ export default function EmptyState({ onPlanLoaded, onNewPlan, onInstall, isStand
     reader.onload = (ev) => {
       try {
         const plan = JSON.parse(ev.target.result);
-        if (!plan.meta || !plan.days) {
+        if (!isValidPlanShape(plan)) {
           alert("Invalid plan format. Please use a valid SETS JSON file.");
           return;
         }
-        savePlan(plan);
-        onPlanLoaded(plan);
+        onPlanLoaded(startNewPlan(plan));
       } catch {
         alert("Could not parse the file. Make sure it's a valid JSON.");
       }
