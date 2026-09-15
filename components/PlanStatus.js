@@ -1,7 +1,8 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import MarqueeText from "./MarqueeText";
+import { splitChip } from "@/lib/splits";
 
 function timeAgo(dateStr) {
   const then = new Date(dateStr + "T12:00:00");
@@ -24,67 +25,58 @@ function formatDuration(seconds) {
   return rem > 0 ? `${h}h ${rem}min` : `${h}h`;
 }
 
-function addWeeks(dateStr, weeks) {
-  const d = new Date(dateStr + "T12:00:00");
-  d.setDate(d.getDate() + Math.round(weeks * 7));
-  return d;
-}
-
-function formatDate(date) {
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export default function PlanStatus({ plan, sessions }) {
   const [reminderDismissed, setReminderDismissed] = useState(false);
 
+  // Reading the clock is impure, so it happens in an effect rather than during
+  // render. Re-reading on focus keeps the bar honest if the app is left open
+  // across midnight.
+  const [now, setNow] = useState(null);
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    tick();
+    document.addEventListener("visibilitychange", tick);
+    return () => document.removeEventListener("visibilitychange", tick);
+  }, []);
+
   const stats = useMemo(() => {
     const { startDate, durationWeeks } = plan.meta;
-    const totalSessions = durationWeeks * plan.days.length;
-    const completed = sessions.length;
-    const progress = totalSessions > 0 ? Math.min(completed / totalSessions, 1) : 0;
 
+    // Progress is time, not sessions. The app doesn't know how often the user
+    // trains, so it can't hold them to a session target — see
+    // docs/adr/0001-frequency-is-not-modelled.md.
+    const totalDays = durationWeeks * 7;
     const start = new Date(startDate + "T12:00:00");
-    const originalEnd = addWeeks(startDate, durationWeeks);
-    const today = new Date();
+    const daysElapsed = now === null
+      ? 0
+      : Math.max(Math.floor((now - start) / MS_PER_DAY), 0);
+    const progress = totalDays > 0 ? Math.min(daysElapsed / totalDays, 1) : 0;
+    const currentWeek = Math.min(Math.floor(daysElapsed / 7) + 1, durationWeeks);
 
-    const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-    const weeksSinceStart = Math.max((today - start) / msPerWeek, 0.01);
-    const currentWeek = Math.min(Math.floor(weeksSinceStart) + 1, durationWeeks);
+    // Volume is descriptive only: a tally and an observed average.
+    const completed = sessions.length;
+    const weeksElapsed = Math.max(daysElapsed / 7, 1 / 7);
+    const perWeek = completed > 0 ? completed / weeksElapsed : 0;
 
-    let projectedEnd = null;
-    let deltaWeeks = 0;
+    const isPlanComplete = now !== null && daysElapsed >= totalDays;
+    const showReminder = isPlanComplete && !reminderDismissed;
 
-    if (completed > 0 && weeksSinceStart > 0.5) {
-      const pace = completed / weeksSinceStart;
-      if (pace > 0) {
-        const projectedWeeks = totalSessions / pace;
-        projectedEnd = addWeeks(startDate, projectedWeeks);
-        deltaWeeks = Math.round((projectedEnd - originalEnd) / msPerWeek);
-      }
-    }
-
-    const isPlanComplete = completed >= totalSessions;
-    const isDeadlinePassed = today > originalEnd;
-    const showReminder = (isPlanComplete || isDeadlinePassed) && !reminderDismissed;
-
-    const lastSession = sessions.length > 0
-      ? sessions[sessions.length - 1]
-      : null;
+    const lastSession = completed > 0 ? sessions[completed - 1] : null;
 
     return {
-      totalSessions,
       completed,
+      perWeek,
       progress,
       currentWeek,
       durationWeeks,
-      originalEnd,
-      projectedEnd,
-      deltaWeeks,
       showReminder,
-      isPlanComplete,
       lastSession,
     };
-  }, [plan, sessions, reminderDismissed]);
+  }, [plan, sessions, reminderDismissed, now]);
+
+  const chip = splitChip(plan.meta.split);
 
 
   return (
@@ -101,9 +93,7 @@ export default function PlanStatus({ plan, sessions }) {
             <div className="bg-brand-red/10 border border-brand-red/30 rounded-xl px-4 py-3 flex items-start justify-between gap-3">
               <div>
                 <p className="text-brand-red text-sm font-semibold">
-                  {stats.isPlanComplete
-                    ? "Plan complete — ready for a new challenge?"
-                    : "You've been on this plan a while — consider an update."}
+                  Plan complete — ready for a new challenge?
                 </p>
                 <p className="text-gray-500 text-xs mt-0.5">
                   Tap the menu → New Plan when you&apos;re ready.
@@ -127,6 +117,14 @@ export default function PlanStatus({ plan, sessions }) {
               <span className="text-[10px] text-gray-500 uppercase tracking-widest font-mono">
                 Week {stats.currentWeek} / {stats.durationWeeks}
               </span>
+              {chip && (
+                <>
+                  <span className="text-gray-700">·</span>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-widest font-mono truncate">
+                    {chip}
+                  </span>
+                </>
+              )}
             </div>
             <MarqueeText
               text={plan.meta.name}
@@ -137,13 +135,12 @@ export default function PlanStatus({ plan, sessions }) {
             )}
           </div>
           <div className="text-right ml-3 shrink-0">
-            <div className="flex items-baseline gap-0.5 justify-end">
-              <span className="text-brand-red font-mono font-bold text-xl leading-none">
-                {stats.completed}
-              </span>
-              <span className="text-gray-600 text-sm">/{stats.totalSessions}</span>
-            </div>
-            <p className="text-xs text-gray-600 mt-0.5">sessions</p>
+            <span className="text-brand-red font-mono font-bold text-xl leading-none">
+              {stats.completed}
+            </span>
+            <p className="text-xs text-gray-600 mt-0.5">
+              {stats.completed === 1 ? "session" : "sessions"}
+            </p>
           </div>
         </div>
 
@@ -167,52 +164,30 @@ export default function PlanStatus({ plan, sessions }) {
               transition={{ duration: 0.3, delay: 0.3 }}
               className="overflow-hidden"
             >
-              <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-gray-600 uppercase tracking-widest font-mono">Last</span>
-                  <span className="text-xs font-semibold text-gray-300">
-                    {stats.lastSession.dayLabel}
+              <div className="mt-3 pt-3 border-t border-white/5 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-gray-600 uppercase tracking-widest font-mono">Average</span>
+                  <span className="text-xs text-gray-500">
+                    <span className="font-mono">{stats.perWeek.toFixed(1)}</span> / week
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  {formatDuration(stats.lastSession.duration) && (
-                    <>
-                      <span className="font-mono">{formatDuration(stats.lastSession.duration)}</span>
-                      <span className="text-gray-700">·</span>
-                    </>
-                  )}
-                  <span>{timeAgo(stats.lastSession.date)}</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-[10px] text-gray-600 uppercase tracking-widest font-mono shrink-0">Last</span>
+                    <span className="text-xs font-semibold text-gray-300 truncate">
+                      {stats.lastSession.workoutLabel}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 shrink-0 ml-2">
+                    {formatDuration(stats.lastSession.duration) && (
+                      <>
+                        <span className="font-mono">{formatDuration(stats.lastSession.duration)}</span>
+                        <span className="text-gray-700">·</span>
+                      </>
+                    )}
+                    <span>{timeAgo(stats.lastSession.date)}</span>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Deadline drift */}
-        <AnimatePresence>
-          {stats.projectedEnd && stats.deltaWeeks !== 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, delay: 0.5 }}
-              className="overflow-hidden"
-            >
-              <div className="mt-3 flex items-center gap-2 text-xs">
-                <span className="text-gray-600">
-                  Original end: {formatDate(stats.originalEnd)}
-                </span>
-                <span className="text-gray-700">→</span>
-                <span
-                  className={
-                    stats.deltaWeeks > 0 ? "text-amber-400 font-semibold" : "text-emerald-400 font-semibold"
-                  }
-                >
-                  {formatDate(stats.projectedEnd)}{" "}
-                  <span className="text-xs opacity-70">
-                    ({stats.deltaWeeks > 0 ? "+" : ""}{stats.deltaWeeks}w)
-                  </span>
-                </span>
               </div>
             </motion.div>
           )}

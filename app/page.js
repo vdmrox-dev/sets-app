@@ -33,17 +33,15 @@ export default function Home() {
     });
   }, []);
 
-  // A new plan replaced the old one (imported, generated, built, or cleared).
-  // Session history is already wiped in storage by startNewPlan.
-  function handlePlanLoaded(newPlan) {
+  // `startsOver` separates a plan that replaced the old one (imported,
+  // generated, built, or cleared) from an edit to the active plan. A fresh plan
+  // has already had its session history wiped in storage by startNewPlan, and
+  // bumping the epoch remounts the views so no stale progress lingers on screen.
+  function handlePlanLoaded(newPlan, { startsOver = true } = {}) {
     setPlan(newPlan);
+    if (!startsOver) return;
     setSessions(getSessions());
     setPlanEpoch((n) => n + 1);
-  }
-
-  // The active plan was edited in place — stats and progress carry over.
-  function handlePlanUpdated(updatedPlan) {
-    setPlan(updatedPlan);
   }
 
   function handleSessionComplete(newSessions) {
@@ -185,7 +183,7 @@ export default function Home() {
           <NewPlanForm
             editPlan={plan}
             onClose={() => setShowEditPlan(false)}
-            onPlanLoaded={(updatedPlan) => { handlePlanUpdated(updatedPlan); setShowEditPlan(false); }}
+            onPlanLoaded={(updatedPlan, opts) => { handlePlanLoaded(updatedPlan, opts); setShowEditPlan(false); }}
           />
         )}
       </AnimatePresence>

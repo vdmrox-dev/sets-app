@@ -2,10 +2,11 @@
   "meta": {
     "name": "Test plan",
     "edition": "Month 01",
+    "split": "ppl",
     "startDate": "2026-05-26",
     "durationWeeks": 4
   },
-  "days": [
+  "workouts": [
     {
       "id": "push",
       "label": "Push",

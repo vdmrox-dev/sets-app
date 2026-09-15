@@ -1,7 +1,7 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRef } from "react";
-import { startNewPlan, clearPlan, clearSessions, saveActiveSession } from "@/lib/storage";
+import { startNewPlan, clearPlan, clearSessions, saveActiveSession, isValidPlanShape } from "@/lib/storage";
 
 export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, onEditPlan, hasPlan, plan, onInstall, showInstallOption }) {
   const fileInputRef = useRef(null);
@@ -13,7 +13,7 @@ export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, onEd
     reader.onload = (ev) => {
       try {
         const loaded = JSON.parse(ev.target.result);
-        if (!loaded.meta || !loaded.days) {
+        if (!isValidPlanShape(loaded)) {
           alert("Invalid plan format.");
           return;
         }

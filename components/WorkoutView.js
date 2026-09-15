@@ -4,12 +4,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import ExerciseCard from "./ExerciseCard";
 import ExerciseLogDrawer from "./ExerciseLogDrawer";
 import {
-  isDayCompletedToday,
+  isWorkoutCompletedToday,
   addSession,
   getActiveSession,
   saveActiveSession,
   todayString,
 } from "@/lib/storage";
+import { nextWorkoutId } from "@/lib/splits";
 
 function formatTime(seconds) {
   const h = Math.floor(seconds / 3600);
@@ -20,7 +21,11 @@ function formatTime(seconds) {
 }
 
 export default function WorkoutView({ plan, sessions, onSessionComplete }) {
-  const [activeTab, setActiveTab] = useState(plan.days[0]?.id ?? "");
+  // The Split defines a rotation, so open on whatever comes after the last
+  // logged Session rather than always on the first Workout.
+  const lastLogged = sessions.length > 0 ? sessions[sessions.length - 1] : null;
+  const upNextId = nextWorkoutId(plan.workouts, lastLogged?.workoutId);
+  const [activeTab, setActiveTab] = useState(upNextId);
   const [activeSession, setActiveSession] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [showFinishAnimation, setShowFinishAnimation] = useState(false);
@@ -34,7 +39,7 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
     if (stored) {
       startTransition(() => {
         setActiveSession(stored);
-        setActiveTab(stored.dayId);
+        setActiveTab(stored.workoutId);
         setElapsed(Math.floor((Date.now() - stored.startTime) / 1000));
       });
     }
@@ -67,14 +72,14 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [activeSession]);
 
-  const currentDay = plan.days.find((d) => d.id === activeTab);
-  const isCurrentDaySession = activeSession?.dayId === activeTab;
-  const isDoneToday = !activeSession && isDayCompletedToday(activeTab);
+  const currentWorkout = plan.workouts.find((w) => w.id === activeTab);
+  const isCurrentWorkoutSession = activeSession?.workoutId === activeTab;
+  const isDoneToday = !activeSession && isWorkoutCompletedToday(activeTab);
 
   function startSession() {
     const session = {
-      dayId: activeTab,
-      dayLabel: currentDay?.label ?? activeTab,
+      workoutId: activeTab,
+      workoutLabel: currentWorkout?.label ?? activeTab,
       startTime: Date.now(),
       checked: [],
       setLogs: {},
@@ -111,8 +116,8 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
     const session = {
       id: `${Date.now()}`,
       date: todayString(),
-      dayId: activeSession.dayId,
-      dayLabel: activeSession.dayLabel,
+      workoutId: activeSession.workoutId,
+      workoutLabel: activeSession.workoutLabel,
       duration: finalDuration,
       completedExercises: activeSession.checked,
       setLogs: activeSession.setLogs || {},
@@ -125,8 +130,10 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
     setTimeout(() => {
       setShowFinishAnimation(false);
       onSessionComplete(newSessions);
+      // Advance the rotation so the app lands on the next Workout.
+      setActiveTab(nextWorkoutId(plan.workouts, session.workoutId));
     }, 2200);
-  }, [activeSession, onSessionComplete]);
+  }, [activeSession, onSessionComplete, plan.workouts]);
 
   return (
     <div className="flex flex-col flex-1 relative pb-28">
@@ -148,7 +155,7 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
                   className="w-2 h-2 rounded-full bg-brand-red"
                 />
                 <span className="text-xs font-semibold text-brand-red uppercase tracking-wider">
-                  {activeSession.dayLabel} in progress
+                  {activeSession.workoutLabel} in progress
                 </span>
               </div>
               <span className="font-mono text-sm font-bold text-brand-red tabular-nums">
@@ -159,22 +166,34 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
         )}
       </AnimatePresence>
 
-      {/* Day tabs */}
-      <div className="flex border-b border-white/10 sticky top-0 bg-brand-navy/95 backdrop-blur-xl z-10">
-        {plan.days.map((day) => {
-          const done = !activeSession && isDayCompletedToday(day.id);
-          const isActive = activeTab === day.id;
+      {/* Workout tabs — scrolls horizontally once a split has enough workouts
+          that squeezing them all on screen would truncate the labels. */}
+      <div className="flex border-b border-white/10 sticky top-0 bg-brand-navy/95 backdrop-blur-xl z-10 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {plan.workouts.map((workout) => {
+          const done = !activeSession && isWorkoutCompletedToday(workout.id);
+          const isActive = activeTab === workout.id;
+          // Pointless on a single-workout plan, and just noise mid-session.
+          const isUpNext =
+            !activeSession && plan.workouts.length > 1 && workout.id === upNextId;
           return (
             <button
-              key={day.id}
-              onClick={() => setActiveTab(day.id)}
+              key={workout.id}
+              onClick={() => setActiveTab(workout.id)}
               className={[
-                "flex-1 py-3.5 text-xs font-bold uppercase tracking-widest transition-all relative px-2 min-w-0",
+                "flex-1 min-w-[5.5rem] pt-4 pb-3.5 text-xs font-bold uppercase tracking-widest transition-all relative px-3",
                 isActive ? "text-brand-red" : "text-gray-500 hover:text-gray-300",
               ].join(" ")}
             >
+              {isUpNext && (
+                <span
+                  className="absolute top-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-brand-red"
+                  title="Next up in your rotation"
+                >
+                  <span className="sr-only">Next up</span>
+                </span>
+              )}
               <span className="block truncate">
-                {day.label}
+                {workout.label}
                 {done && <span className="ml-1 text-emerald-500">✓</span>}
               </span>
               {isActive && (
@@ -199,14 +218,14 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
             transition={{ duration: 0.2 }}
             className="space-y-3"
           >
-            {currentDay?.exercises?.map((exercise, i) => (
+            {currentWorkout?.exercises?.map((exercise, i) => (
               <ExerciseCard
                 key={exercise.name}
                 exercise={exercise}
                 index={i}
-                isSession={isCurrentDaySession}
+                isSession={isCurrentWorkoutSession}
                 isDone={
-                  isCurrentDaySession &&
+                  isCurrentWorkoutSession &&
                   activeSession.checked.includes(exercise.name)
                 }
                 onOpen={() => setOpenExercise(exercise)}
@@ -225,10 +244,10 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
               animate={{ opacity: 1, scale: 1 }}
               className="w-full bg-emerald-900/30 border border-emerald-500/30 text-emerald-400 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 uppercase tracking-widest text-xs overflow-hidden px-4"
             >
-              <span className="truncate">{currentDay?.label}</span>
+              <span className="truncate">{currentWorkout?.label}</span>
               <span className="shrink-0">done today ✓</span>
             </motion.div>
-          ) : activeSession && isCurrentDaySession ? (
+          ) : activeSession && isCurrentWorkoutSession ? (
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={finishSession}
@@ -236,10 +255,10 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
             >
               Finish Workout
             </motion.button>
-          ) : activeSession && !isCurrentDaySession ? (
+          ) : activeSession && !isCurrentWorkoutSession ? (
             <div className="w-full bg-white/5 border border-white/10 text-gray-500 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 uppercase tracking-widest text-xs overflow-hidden px-4">
               <span className="shrink-0">Session active on</span>
-              <span className="truncate">{activeSession.dayLabel}</span>
+              <span className="truncate">{activeSession.workoutLabel}</span>
             </div>
           ) : (
             <motion.button
@@ -248,7 +267,7 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
               className="w-full bg-brand-red hover:bg-brand-maroon text-white font-bold py-4 rounded-2xl transition-colors uppercase tracking-widest text-sm shadow-lg shadow-brand-red/20 flex items-center justify-center gap-2 overflow-hidden"
             >
               <span className="shrink-0">Start</span>
-              <span className="truncate">{currentDay?.label}</span>
+              <span className="truncate">{currentWorkout?.label}</span>
               <span className="shrink-0">Workout</span>
             </motion.button>
           )}
