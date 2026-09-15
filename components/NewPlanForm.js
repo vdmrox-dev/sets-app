@@ -18,7 +18,7 @@ const EQUIPMENT = [
 
 const defaultForm = {
   goal: "",
-  daysPerWeek: 3,
+  sessionGroups: 3,
   sessionDuration: "60",
   level: "",
   age: "",
@@ -200,14 +200,17 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan, editPlan }
                 </div>
               </Field>
 
-              {/* Days per week */}
-              <Field label="Training days per week">
+              {/* Session groups */}
+              <Field
+                label="Training session groups"
+                hint="How many different sessions the plan is split into — each one covering its own muscle groups."
+              >
                 <div className="flex gap-2">
                   {[2, 3, 4, 5, 6].map((n) => (
                     <ToggleButton
                       key={n}
-                      active={form.daysPerWeek === n}
-                      onClick={() => setForm((f) => ({ ...f, daysPerWeek: n }))}
+                      active={form.sessionGroups === n}
+                      onClick={() => setForm((f) => ({ ...f, sessionGroups: n }))}
                       small
                     >
                       {n}
@@ -421,14 +424,17 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan, editPlan }
   );
 }
 
-function Field({ label, optional, children }) {
+function Field({ label, optional, hint, children }) {
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <label className="text-sm font-semibold text-gray-200">{label}</label>
-        {optional && (
-          <span className="text-xs text-gray-600 bg-white/5 px-2 py-0.5 rounded-full">optional</span>
-        )}
+      <div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-semibold text-gray-200">{label}</label>
+          {optional && (
+            <span className="text-xs text-gray-600 bg-white/5 px-2 py-0.5 rounded-full">optional</span>
+          )}
+        </div>
+        {hint && <p className="text-gray-600 text-xs mt-1 leading-snug">{hint}</p>}
       </div>
       {children}
     </div>
