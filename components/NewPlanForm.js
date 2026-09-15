@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { generatePlanPrompt } from "@/lib/prompt";
-import { savePlan } from "@/lib/storage";
+import { startNewPlan } from "@/lib/storage";
 import ManualPlanBuilder from "./ManualPlanBuilder";
 
 const GOALS = ["Hypertrophy", "Strength", "Fat Loss", "General Fitness"];
@@ -59,8 +59,7 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan, editPlan }
         setPasteError("The plan is missing required fields. Make sure you copied the full AI response.");
         return;
       }
-      savePlan(plan);
-      onPlanLoaded(plan);
+      onPlanLoaded(startNewPlan(plan));
       onClose();
     } catch {
       setPasteError("Couldn't find a valid plan in your text. Try copying the AI response again.");

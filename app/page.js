@@ -18,6 +18,9 @@ export default function Home() {
   const [showInstall, setShowInstall] = useState(false);
   const { deferredPrompt, ios, dismiss: dismissInstall } = useInstallState();
   const [isStandalone, setIsStandalone] = useState(true);
+  // Bumped whenever a new plan replaces the old one. Used as a key to remount
+  // the plan views so no state survives from the previous plan.
+  const [planEpoch, setPlanEpoch] = useState(0);
 
   useEffect(() => {
     startTransition(() => {
@@ -30,9 +33,17 @@ export default function Home() {
     });
   }, []);
 
+  // A new plan replaced the old one (imported, generated, built, or cleared).
+  // Session history is already wiped in storage by startNewPlan.
   function handlePlanLoaded(newPlan) {
     setPlan(newPlan);
     setSessions(getSessions());
+    setPlanEpoch((n) => n + 1);
+  }
+
+  // The active plan was edited in place — stats and progress carry over.
+  function handlePlanUpdated(updatedPlan) {
+    setPlan(updatedPlan);
   }
 
   function handleSessionComplete(newSessions) {
@@ -131,10 +142,11 @@ export default function Home() {
             </header>
 
             {/* Plan status */}
-            <PlanStatus plan={plan} sessions={sessions} />
+            <PlanStatus key={`status-${planEpoch}`} plan={plan} sessions={sessions} />
 
             {/* Workout view */}
             <WorkoutView
+              key={`workout-${planEpoch}`}
               plan={plan}
               sessions={sessions}
               onSessionComplete={handleSessionComplete}
@@ -173,7 +185,7 @@ export default function Home() {
           <NewPlanForm
             editPlan={plan}
             onClose={() => setShowEditPlan(false)}
-            onPlanLoaded={(updatedPlan) => { handlePlanLoaded(updatedPlan); setShowEditPlan(false); }}
+            onPlanLoaded={(updatedPlan) => { handlePlanUpdated(updatedPlan); setShowEditPlan(false); }}
           />
         )}
       </AnimatePresence>

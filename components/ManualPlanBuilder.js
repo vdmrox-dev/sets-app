@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { savePlan, todayString } from "@/lib/storage";
+import { savePlan, startNewPlan, todayString } from "@/lib/storage";
 
 function Stepper({ value, onChange, min = 1, max = 30 }) {
   return (
@@ -215,14 +215,20 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan, initialPlan, i
     const plan = {
       meta: {
         name: planName.trim(),
-        edition: "Custom",
-        startDate: todayString(),
+        edition: initialPlan?.meta?.edition ?? "Custom",
+        // Editing keeps the original start date so the week counter and
+        // deadline stay anchored to when the plan actually began.
+        startDate: (isEditing && initialPlan?.meta?.startDate) || todayString(),
         durationWeeks,
       },
       days: days.map((d) => ({ id: d.id, label: d.label, exercises: d.exercises })),
     };
-    savePlan(plan);
-    onPlanSaved(plan);
+    if (isEditing) {
+      savePlan(plan);
+      onPlanSaved(plan);
+    } else {
+      onPlanSaved(startNewPlan(plan));
+    }
   }
 
   const canSave = planName.trim().length > 0 && days.length > 0;
