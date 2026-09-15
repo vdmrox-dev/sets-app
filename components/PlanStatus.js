@@ -27,8 +27,9 @@ function formatDuration(seconds) {
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-export default function PlanStatus({ plan, sessions }) {
+export default function PlanStatus({ plan, sessions, onDeleteSession }) {
   const [reminderDismissed, setReminderDismissed] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   // Reading the clock is impure, so it happens in an effect rather than during
   // render. Re-reading on focus keeps the bar honest if the app is left open
@@ -65,6 +66,12 @@ export default function PlanStatus({ plan, sessions }) {
 
     const lastSession = completed > 0 ? sessions[completed - 1] : null;
 
+    // Undoing a Session is for fixing one finished by accident, so it's only
+    // offered while that Session is still today's. Derived from `now` so the
+    // affordance disappears on its own once the day rolls over.
+    const today = now === null ? null : new Date(now).toISOString().split("T")[0];
+    const canDeleteLast = !!lastSession?.id && lastSession.date === today;
+
     return {
       completed,
       perWeek,
@@ -73,6 +80,7 @@ export default function PlanStatus({ plan, sessions }) {
       durationWeeks,
       showReminder,
       lastSession,
+      canDeleteLast,
     };
   }, [plan, sessions, reminderDismissed, now]);
 
@@ -186,8 +194,52 @@ export default function PlanStatus({ plan, sessions }) {
                       </>
                     )}
                     <span>{timeAgo(stats.lastSession.date)}</span>
+                    {stats.canDeleteLast && !confirmingDelete && (
+                      <button
+                        onClick={() => setConfirmingDelete(true)}
+                        aria-label="Delete this session"
+                        className="w-6 h-6 -mr-1 rounded-full flex items-center justify-center text-gray-600 hover:text-brand-maroon active:scale-90 transition-all text-base leading-none"
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
                 </div>
+
+                <AnimatePresence>
+                  {confirmingDelete && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-1 bg-brand-maroon/10 border border-brand-maroon/30 rounded-xl p-3 space-y-2.5">
+                        <p className="text-xs text-gray-400">
+                          Delete this session? Its logged sets will be lost and it will
+                          stop counting toward your totals.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setConfirmingDelete(false)}
+                            className="flex-1 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-400 text-xs font-bold uppercase tracking-wider active:scale-95 transition-transform"
+                          >
+                            Keep
+                          </button>
+                          <button
+                            onClick={() => {
+                              setConfirmingDelete(false);
+                              onDeleteSession?.(stats.lastSession.id);
+                            }}
+                            className="flex-1 py-2 rounded-lg bg-brand-maroon/20 border border-brand-maroon/40 text-brand-maroon text-xs font-bold uppercase tracking-wider active:scale-95 transition-transform"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           )}

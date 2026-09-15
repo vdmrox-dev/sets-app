@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, startTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getPlan, getSessions, getActiveSession } from "@/lib/storage";
+import { getPlan, getSessions, getActiveSession, deleteSession } from "@/lib/storage";
 import EmptyState from "@/components/EmptyState";
 import WorkoutView from "@/components/WorkoutView";
 import PlanStatus from "@/components/PlanStatus";
@@ -46,6 +46,10 @@ export default function Home() {
 
   function handleSessionComplete(newSessions) {
     setSessions(newSessions);
+  }
+
+  function handleDeleteSession(sessionId) {
+    setSessions(deleteSession(sessionId));
   }
 
   function handleEditPlan() {
@@ -140,7 +144,12 @@ export default function Home() {
             </header>
 
             {/* Plan status */}
-            <PlanStatus key={`status-${planEpoch}`} plan={plan} sessions={sessions} />
+            <PlanStatus
+              key={`status-${planEpoch}`}
+              plan={plan}
+              sessions={sessions}
+              onDeleteSession={handleDeleteSession}
+            />
 
             {/* Workout view */}
             <WorkoutView

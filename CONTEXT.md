@@ -36,6 +36,8 @@ A Plan's Split is optional: imported and legacy Plans may have none. A hand-buil
 ## Session
 A completed performance of one Workout. Records: date, which Workout was performed, total duration (seconds), and which Exercises were completed.
 
+Sessions are not unique per Workout per date — the same Workout may be performed more than once on the same day, and each performance is its own Session counting separately toward the tally and weekly average.
+
 ## Active Session
 A Session currently in progress. Records: which Workout, when it started (`startTime`), and which exercises have been checked off (`checked: string[]`).
 

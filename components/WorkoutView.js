@@ -32,6 +32,9 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
   const [openExercise, setOpenExercise] = useState(null);
   const timerRef = useRef(null);
   const [finishedDuration, setFinishedDuration] = useState(0);
+  // Finishing is one tap on a button pinned to the bottom of the screen, so it
+  // asks before logging the session.
+  const [confirmingFinish, setConfirmingFinish] = useState(false);
 
   // Restore active session from storage on mount
   useEffect(() => {
@@ -74,7 +77,12 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
 
   const currentWorkout = plan.workouts.find((w) => w.id === activeTab);
   const isCurrentWorkoutSession = activeSession?.workoutId === activeTab;
-  const isDoneToday = !activeSession && isWorkoutCompletedToday(activeTab);
+
+  // Shown in the finish confirmation. A Workout with no exercises has nothing
+  // to leave unlogged, so it gets no warning.
+  const exerciseCount = currentWorkout?.exercises?.length ?? 0;
+  const loggedCount = activeSession?.checked?.length ?? 0;
+  const hasUnlogged = exerciseCount > 0 && loggedCount < exerciseCount;
 
   function startSession() {
     const session = {
@@ -108,6 +116,7 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
 
   const finishSession = useCallback(() => {
     if (!activeSession) return;
+    setConfirmingFinish(false);
     // Derive duration from startTime rather than the elapsed counter so that
     // any time spent with the app backgrounded (where setInterval was throttled)
     // is correctly included in the final total.
@@ -178,7 +187,10 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
           return (
             <button
               key={workout.id}
-              onClick={() => setActiveTab(workout.id)}
+              onClick={() => {
+                setConfirmingFinish(false);
+                setActiveTab(workout.id);
+              }}
               className={[
                 "flex-1 min-w-[5.5rem] pt-4 pb-3.5 text-xs font-bold uppercase tracking-widest transition-all relative px-3",
                 isActive ? "text-brand-red" : "text-gray-500 hover:text-gray-300",
@@ -238,23 +250,48 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
       {/* Footer CTA */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-brand-navy/90 backdrop-blur-xl border-t border-white/10 z-20 flex justify-center">
         <div className="w-full max-w-lg">
-          {isDoneToday ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="w-full bg-emerald-900/30 border border-emerald-500/30 text-emerald-400 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 uppercase tracking-widest text-xs overflow-hidden px-4"
-            >
-              <span className="truncate">{currentWorkout?.label}</span>
-              <span className="shrink-0">done today ✓</span>
-            </motion.div>
-          ) : activeSession && isCurrentWorkoutSession ? (
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={finishSession}
-              className="w-full bg-brand-red text-white font-bold py-4 rounded-2xl uppercase tracking-widest text-sm shadow-lg shadow-brand-red/30"
-            >
-              Finish Workout
-            </motion.button>
+          {activeSession && isCurrentWorkoutSession ? (
+            <AnimatePresence mode="wait">
+            {confirmingFinish ? (
+              <motion.div
+                key="confirm-finish"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-3"
+              >
+                <p className="text-center text-sm text-gray-400">
+                  {hasUnlogged
+                    ? `Only ${loggedCount} of ${exerciseCount} exercises logged. Finish anyway?`
+                    : "Finish this workout?"}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setConfirmingFinish(false)}
+                    className="flex-1 py-3.5 rounded-2xl bg-white/5 border border-white/10 text-gray-400 font-bold text-sm uppercase tracking-widest active:scale-95 transition-transform"
+                  >
+                    Keep Going
+                  </button>
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={finishSession}
+                    className="flex-1 py-3.5 rounded-2xl bg-brand-red text-white font-bold text-sm uppercase tracking-widest shadow-lg shadow-brand-red/30"
+                  >
+                    Finish
+                  </motion.button>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.button
+                key="finish-cta"
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setConfirmingFinish(true)}
+                className="w-full bg-brand-red text-white font-bold py-4 rounded-2xl uppercase tracking-widest text-sm shadow-lg shadow-brand-red/30"
+              >
+                Finish Workout
+              </motion.button>
+            )}
+            </AnimatePresence>
           ) : activeSession && !isCurrentWorkoutSession ? (
             <div className="w-full bg-white/5 border border-white/10 text-gray-500 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 uppercase tracking-widest text-xs overflow-hidden px-4">
               <span className="shrink-0">Session active on</span>
