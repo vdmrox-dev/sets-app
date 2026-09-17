@@ -61,11 +61,20 @@ function planToBuilderWorkouts(plan) {
   return plan.workouts.map((workout) => ({
     id: workout.id,
     label: workout.label,
-    exercises: workout.exercises.map((ex) => ({
-      name: ex.name,
-      sets: ex.sets,
-      perSetReps: ex.perSetReps ?? Array(ex.sets).fill(ex.repsMax ?? 10),
-    })),
+    // Spread the original so fields the builder has no UI for — instructions,
+    // note, anything added later — survive an edit instead of being dropped.
+    exercises: workout.exercises.map((ex) => {
+      // highlight was dropped from the schema; ignore it on edit so it isn't
+      // written back. Everything else the builder has no UI for is kept.
+      const kept = { ...ex };
+      delete kept.highlight;
+      return {
+        ...kept,
+        name: ex.name,
+        sets: ex.sets,
+        perSetReps: ex.perSetReps ?? Array(ex.sets).fill(ex.repsMax ?? 10),
+      };
+    }),
   }));
 }
 
@@ -224,27 +233,32 @@ export default function ManualPlanBuilder({ onPlanSaved, hasPlan, initialPlan, i
 
   function saveExercise() {
     if (!exName.trim() || !formWorkoutId) return;
-    const exercise = { name: exName.trim(), sets: exSets, perSetReps: [...exReps] };
-
-    if (editIdx !== null) {
-      // Edit mode — replace in place, preserving order
-      setWorkouts((prev) =>
-        prev.map((d) =>
-          d.id === formWorkoutId
-            ? { ...d, exercises: d.exercises.map((ex, i) => (i === editIdx ? exercise : ex)) }
-            : d
-        )
-      );
-      resetForm();
-    } else {
-      // Add mode — append, then close the form
-      setWorkouts((prev) =>
-        prev.map((d) =>
-          d.id === formWorkoutId ? { ...d, exercises: [...d.exercises, exercise] } : d
-        )
-      );
-      resetForm();
-    }
+    setWorkouts((prev) =>
+      prev.map((d) => {
+        if (d.id !== formWorkoutId) return d;
+        if (editIdx !== null) {
+          const existing = d.exercises[editIdx] ?? {};
+          const exercise = {
+            ...existing,
+            name: exName.trim(),
+            sets: exSets,
+            perSetReps: [...exReps],
+          };
+          return {
+            ...d,
+            exercises: d.exercises.map((ex, i) => (i === editIdx ? exercise : ex)),
+          };
+        }
+        return {
+          ...d,
+          exercises: [
+            ...d.exercises,
+            { name: exName.trim(), sets: exSets, perSetReps: [...exReps] },
+          ],
+        };
+      })
+    );
+    resetForm();
   }
 
   function removeExercise(workoutId, idx) {
