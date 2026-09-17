@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { generatePlanPrompt } from "@/lib/prompt";
-import { startNewPlan, isValidPlanShape } from "@/lib/storage";
+import { startNewPlan } from "@/lib/storage";
+import { extractPlanFromText } from "@/lib/parsePlan";
 import { SPLITS, BODY_PART_COUNTS, isBodyPart } from "@/lib/splits";
 import ManualPlanBuilder from "./ManualPlanBuilder";
 
@@ -39,32 +40,18 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan, editPlan }
   const [pasteValue, setPasteValue] = useState("");
   const [pasteError, setPasteError] = useState(null);
 
-  function extractJsonFromText(text) {
-    // Try to extract from ```json ... ``` block first
-    const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (codeBlockMatch) {
-      return JSON.parse(codeBlockMatch[1].trim());
-    }
-    // Fallback: try to find a raw JSON object
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
-    throw new Error("No JSON found");
-  }
-
   function handleImportPaste() {
     setPasteError(null);
     try {
-      const plan = extractJsonFromText(pasteValue);
-      if (!isValidPlanShape(plan)) {
-        setPasteError("The plan is missing required fields. Make sure you copied the full AI response.");
-        return;
-      }
+      const plan = extractPlanFromText(pasteValue);
       onPlanLoaded(startNewPlan(plan));
       onClose();
-    } catch {
-      setPasteError("Couldn't find a valid plan in your text. Try copying the AI response again.");
+    } catch (err) {
+      if (err?.name === "QuotaExceededError" || err?.code === 22 || err?.code === 1014) {
+        setPasteError("This plan is too large to save on this device. Try a shorter reply, or clear site data.");
+        return;
+      }
+      setPasteError("Couldn't find a valid plan in your text. Try copying the AI response again — the whole reply is fine.");
     }
   }
 
@@ -120,7 +107,13 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan, editPlan }
               </p>
             </div>
             <button
-              onClick={() => (mode === "manual" || editPlan) ? setShowCloseConfirm(true) : onClose()}
+              onClick={() => {
+                if (mode === "manual" || editPlan || pasteValue.trim()) {
+                  setShowCloseConfirm(true);
+                } else {
+                  onClose();
+                }
+              }}
               className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
             >
               ✕
@@ -135,7 +128,13 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan, editPlan }
                 className="overflow-hidden px-4 pb-3"
               >
                 <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-                  <p className="text-xs text-gray-400">{editPlan ? "Discard your changes?" : "Discard your plan?"}</p>
+                  <p className="text-xs text-gray-400">
+                    {pasteValue.trim()
+                      ? "You haven't imported this plan yet. Discard it?"
+                      : editPlan
+                        ? "Discard your changes?"
+                        : "Discard your plan?"}
+                  </p>
                   <div className="flex gap-2 shrink-0">
                     <button
                       onClick={() => setShowCloseConfirm(false)}
