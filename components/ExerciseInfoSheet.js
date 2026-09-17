@@ -4,12 +4,8 @@ import { youtubeSearchUrl, exerciseInstructions } from "@/lib/exercise";
 
 function PlayIcon() {
   return (
-    <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" fill="none">
-      <path
-        d="M6 4.5l5.5 3.5L6 11.5v-7z"
-        fill="currentColor"
-      />
-      <rect x="1" y="2" width="14" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" />
+    <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 ml-0.5" fill="currentColor">
+      <path d="M5 3.5v9l8-4.5-8-4.5z" />
     </svg>
   );
 }
@@ -87,10 +83,14 @@ export default function ExerciseInfoSheet({ exercise, onClose }) {
             href={youtubeSearchUrl(exercise.name)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-2xl bg-white/5 border border-white/10 text-gray-300 font-bold text-xs uppercase tracking-widest active:scale-[0.97] transition-transform"
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-2xl bg-brand-red/10 border border-brand-red/30 text-brand-red active:scale-[0.98] transition-transform"
           >
-            <PlayIcon />
-            Watch on YouTube
+            <span className="w-9 h-9 rounded-full bg-brand-red/20 flex items-center justify-center shrink-0">
+              <PlayIcon />
+            </span>
+            <span className="text-xs font-bold uppercase tracking-widest">
+              Watch on YouTube
+            </span>
           </a>
         </div>
 
