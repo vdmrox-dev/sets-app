@@ -28,6 +28,8 @@ A plan-specific instruction attached to a single Exercise, modifying how that pa
 ## Plan
 A structured workout program. Contains `meta` (name, edition, start date, duration in weeks, Workout Split) and `workouts` (ordered list of Workouts). Plans are mutually exclusive — only one Plan is active at a time. Loading a new plan replaces the existing one and discards the previous plan's Sessions.
 
+A candidate is only a Plan if it is this structure and nothing else. Unknown properties — including the retired Exercise `highlight` flag — mean it is not a Plan and is rejected on import. See `docs/adr/0003-import-is-an-allowlist.md`.
+
 ## Workout
 One prescribed training session in a Plan — a label plus an ordered list of Exercises. A Workout is a template, performed any number of times over the life of the Plan. The Workouts of a Plan form the sequence defined by its Workout Split.
 

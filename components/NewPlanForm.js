@@ -47,11 +47,16 @@ export default function NewPlanForm({ onClose, onPlanLoaded, hasPlan, editPlan }
       onPlanLoaded(startNewPlan(plan));
       onClose();
     } catch (err) {
-      if (err?.name === "QuotaExceededError" || err?.code === 22 || err?.code === 1014) {
-        setPasteError("This plan is too large to save on this device. Try a shorter reply, or clear site data.");
-        return;
-      }
-      setPasteError("Couldn't find a valid plan in your text. Try copying the AI response again — the whole reply is fine.");
+      const quota =
+        err?.name === "QuotaExceededError" || err?.code === 22 || err?.code === 1014
+          ? "This plan is too large to save on this device. Try a shorter reply, or clear site data."
+          : null;
+      setPasteError(
+        quota ||
+          (err?.message && err.message !== "No JSON found"
+            ? err.message
+            : "Couldn't find a valid plan in your text. Try copying the AI response again — the whole reply is fine.")
+      );
     }
   }
 

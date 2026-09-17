@@ -1,34 +1,11 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRef } from "react";
-import { startNewPlan, clearPlan, clearSessions, saveActiveSession, isValidPlanShape } from "@/lib/storage";
+import { clearPlan, clearSessions, saveActiveSession } from "@/lib/storage";
 
-export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, onEditPlan, hasPlan, plan, onInstall, showInstallOption }) {
-  const fileInputRef = useRef(null);
-
-  function handleFileChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const loaded = JSON.parse(ev.target.result);
-        if (!isValidPlanShape(loaded)) {
-          alert("Invalid plan format.");
-          return;
-        }
-        onPlanLoaded(startNewPlan(loaded));
-        onClose();
-      } catch {
-        alert("Could not parse the file.");
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  }
-
+export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, onEditPlan, onImport, hasPlan, plan, onInstall, showInstallOption }) {
   function handleImport() {
-    fileInputRef.current?.click();
+    onImport?.();
+    onClose();
   }
 
   function handleNewPlan() {
@@ -70,54 +47,43 @@ export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, onEd
   }
 
   return (
-    <>
-      {/* File input is always mounted so its ref is never accessed during render */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".json,application/json"
-        onChange={handleFileChange}
-        className="hidden"
-      />
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+          />
 
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={onClose}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-            />
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="fixed bottom-0 left-0 right-0 z-50 bg-brand-plum/95 backdrop-blur-xl rounded-t-3xl border-t border-white/10 pb-safe"
+          >
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 bg-white/20 rounded-full" />
+            </div>
 
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-brand-plum/95 backdrop-blur-xl rounded-t-3xl border-t border-white/10 pb-safe"
-            >
-              <div className="flex justify-center pt-3 pb-1">
-                <div className="w-10 h-1 bg-white/20 rounded-full" />
-              </div>
+            <div className="px-4 py-2 pb-8 space-y-1">
+              <p className="text-xs text-gray-500 uppercase tracking-widest font-mono px-2 pb-2">Menu</p>
 
-              <div className="px-4 py-2 pb-8 space-y-1">
-                <p className="text-xs text-gray-500 uppercase tracking-widest font-mono px-2 pb-2">Menu</p>
-
-                <MenuItem icon="↑" label="Import Plan" sublabel="Load a JSON training plan" onClick={handleImport} />
-                <MenuItem icon="✦" label="New Plan" sublabel="Generate with AI or build manually" onClick={handleNewPlan} />
-                {hasPlan && <MenuItem icon="✎" label="Edit Current Plan" sublabel="Modify days and exercises" onClick={handleEditPlan} />}
-                {hasPlan && <MenuItem icon="↓" label="Export Plan" sublabel="Download current plan as JSON" onClick={handleExport} />}
-                {showInstallOption && <MenuItem icon="⬇" label="Install App" sublabel="Add SETS to your home screen" onClick={handleInstall} />}
-                {hasPlan && <MenuItem icon="⊘" label="Clear All Data" sublabel="Remove plan and session history" onClick={handleClearData} danger />}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </>
+              <MenuItem icon="↑" label="Import Plan" sublabel="Load a file or paste JSON" onClick={handleImport} />
+              <MenuItem icon="✦" label="New Plan" sublabel="Generate with AI or build manually" onClick={handleNewPlan} />
+              {hasPlan && <MenuItem icon="✎" label="Edit Current Plan" sublabel="Modify days and exercises" onClick={handleEditPlan} />}
+              {hasPlan && <MenuItem icon="↓" label="Export Plan" sublabel="Download current plan as JSON" onClick={handleExport} />}
+              {showInstallOption && <MenuItem icon="⬇" label="Install App" sublabel="Add SETS to your home screen" onClick={handleInstall} />}
+              {hasPlan && <MenuItem icon="⊘" label="Clear All Data" sublabel="Remove plan and session history" onClick={handleClearData} danger />}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
 
