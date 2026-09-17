@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback, startTransition } from "react
 import { motion, AnimatePresence } from "framer-motion";
 import ExerciseCard from "./ExerciseCard";
 import ExerciseLogDrawer from "./ExerciseLogDrawer";
+import ExerciseInfoSheet from "./ExerciseInfoSheet";
 import {
   isWorkoutCompletedToday,
   addSession,
@@ -30,6 +31,10 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
   const [elapsed, setElapsed] = useState(0);
   const [showFinishAnimation, setShowFinishAnimation] = useState(false);
   const [openExercise, setOpenExercise] = useState(null);
+  // Reading how a movement is performed is most useful before training starts,
+  // so this is deliberately not gated on an active session the way the log
+  // drawer is.
+  const [infoExercise, setInfoExercise] = useState(null);
   const timerRef = useRef(null);
   const [finishedDuration, setFinishedDuration] = useState(0);
   // Finishing is one tap on a button pinned to the bottom of the screen, so it
@@ -189,6 +194,7 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
               key={workout.id}
               onClick={() => {
                 setConfirmingFinish(false);
+                setInfoExercise(null);
                 setActiveTab(workout.id);
               }}
               className={[
@@ -241,6 +247,7 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
                   activeSession.checked.includes(exercise.name)
                 }
                 onOpen={() => setOpenExercise(exercise)}
+                onOpenInfo={() => setInfoExercise(exercise)}
               />
             ))}
           </motion.div>
@@ -310,6 +317,16 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
           )}
         </div>
       </div>
+
+      {/* Exercise instructions */}
+      <AnimatePresence>
+        {infoExercise && (
+          <ExerciseInfoSheet
+            exercise={infoExercise}
+            onClose={() => setInfoExercise(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Exercise log drawer */}
       <AnimatePresence>

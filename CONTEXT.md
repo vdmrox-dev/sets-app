@@ -15,6 +15,16 @@ A named movement in a Workout (e.g. "Bench Press"). Has a prescription: `sets` (
 
 The two formats are mutually exclusive. `perSetReps` takes precedence when present.
 
+An Exercise may also carry Instructions and a Note.
+
+## Instructions
+Guidance on how to perform a movement correctly — a handful of short cues covering form and technique. Instructions belong to the movement itself, so they are the same wherever that Exercise appears and do not change when the Plan changes.
+
+> Distinct from a Note, which applies only to one Exercise in one Plan.
+
+## Note
+A plan-specific instruction attached to a single Exercise, modifying how that particular prescription is carried out — a tempo, an emphasis, a substitution, or an intensity technique such as a dropset. A Note is authored for this Plan and does not travel with the movement.
+
 ## Plan
 A structured workout program. Contains `meta` (name, edition, start date, duration in weeks, Workout Split) and `workouts` (ordered list of Workouts). Plans are mutually exclusive — only one Plan is active at a time. Loading a new plan replaces the existing one and discards the previous plan's Sessions.
 

@@ -16,56 +16,80 @@
           "sets": 4,
           "repsMin": 8,
           "repsMax": 10,
-          "note": "Focus on the clavicular portion of the chest.",
-          "highlight": false
+          "instructions": [
+            "Set the bench to a moderate incline, not fully upright.",
+            "Lower the dumbbells to the upper chest with elbows at 45 degrees.",
+            "Press up without locking out or flaring the elbows wide."
+          ],
+          "note": "Focus on the clavicular portion of the chest."
         },
         {
           "name": "Flat Bench Press (Machine or Barbell)",
           "sets": 3,
           "repsMin": 10,
           "repsMax": 12,
-          "note": null,
-          "highlight": false
+          "instructions": [
+            "Plant feet and keep the upper back tight against the pad.",
+            "Lower the bar to mid-chest, not the neck.",
+            "Drive up in a slight arc without bouncing off the chest."
+          ]
         },
         {
           "name": "Cable Crossover (High Pulley)",
           "sets": 3,
           "repsMin": 12,
           "repsMax": 15,
-          "note": null,
-          "highlight": false
+          "instructions": [
+            "Step forward so cables stay under tension at the start.",
+            "Keep a soft elbow and sweep the hands together at chest height.",
+            "Squeeze the chest at the midline, then return slowly."
+          ]
         },
         {
           "name": "Military Dumbbell Press",
           "sets": 3,
           "repsMin": 8,
           "repsMax": 10,
-          "note": null,
-          "highlight": false
+          "instructions": [
+            "Brace the core and keep ribs down as you press.",
+            "Press the bells up and slightly in, not behind the head.",
+            "Lower to ear height without over-arching the lower back."
+          ]
         },
         {
           "name": "Inclined Lateral Raise",
           "sets": 4,
           "repsMin": 12,
           "repsMax": 15,
-          "note": "Lean body at 70° for greater initial tension.",
-          "highlight": true
+          "instructions": [
+            "Lean the torso forward to about 70 degrees and stay there.",
+            "Raise the bells out to the sides with a slight elbow bend.",
+            "Stop at shoulder height and lower under control."
+          ],
+          "note": "Lean body at 70° for greater initial tension."
         },
         {
           "name": "Skull Crushers (EZ Bar)",
           "sets": 3,
           "repsMin": 10,
           "repsMax": 12,
-          "note": null,
-          "highlight": false
+          "instructions": [
+            "Keep upper arms still and pointing toward the ceiling.",
+            "Bend only at the elbows to lower the bar toward the forehead.",
+            "Extend fully without letting the elbows flare out."
+          ]
         },
         {
           "name": "Rope Tricep Pushdown",
           "sets": 3,
           "repsMin": 12,
           "repsMax": 15,
-          "note": "Dropset on the last set to failure.",
-          "highlight": false
+          "instructions": [
+            "Pin the elbows to your sides and keep them there.",
+            "Push the rope down and spread the ends at the bottom.",
+            "Return until the forearms are just above parallel."
+          ],
+          "note": "Dropset on the last set to failure."
         }
       ]
     },
@@ -78,56 +102,78 @@
           "sets": 4,
           "repsMin": 10,
           "repsMax": 12,
-          "note": null,
-          "highlight": false
+          "instructions": [
+            "Sit tall and pull the bar to the upper chest, not behind the neck.",
+            "Drive the elbows down and in as the chest lifts toward the bar.",
+            "Control the stretch at the top without shrugging."
+          ]
         },
         {
           "name": "Barbell Bent-Over Row",
           "sets": 4,
           "repsMin": 8,
           "repsMax": 10,
-          "note": null,
-          "highlight": false
+          "instructions": [
+            "Hinge at the hips until the torso is near parallel.",
+            "Pull the bar to the lower ribs with elbows close to the body.",
+            "Keep a neutral spine and do not jerk the weight up."
+          ]
         },
         {
           "name": "Single-Arm Dumbbell Row",
           "sets": 3,
           "repsMin": 10,
           "repsMax": 12,
-          "note": null,
-          "highlight": false
+          "instructions": [
+            "Brace on the bench and keep the working-side hip still.",
+            "Pull the bell to the hip, not the shoulder.",
+            "Lower until you feel a stretch without rotating the torso."
+          ]
         },
         {
           "name": "Face Pull (Wide Grip)",
           "sets": 3,
           "repsMin": 15,
           "repsMax": 15,
-          "note": "Focus on rear deltoid and rhomboids.",
-          "highlight": true
+          "instructions": [
+            "Set the pulley at face height and take a wide rope grip.",
+            "Pull toward the face while externally rotating the shoulders.",
+            "Lead with the elbows and squeeze the rear delts at the end."
+          ],
+          "note": "Focus on rear deltoid and rhomboids."
         },
         {
           "name": "Barbell Curl",
           "sets": 3,
           "repsMin": 8,
           "repsMax": 10,
-          "note": null,
-          "highlight": false
+          "instructions": [
+            "Stand tall with elbows pinned at the sides.",
+            "Curl the bar up without swinging the torso.",
+            "Lower all the way; do not cut the range short."
+          ]
         },
         {
           "name": "Hammer Curl",
           "sets": 3,
           "repsMin": 10,
           "repsMax": 12,
-          "note": null,
-          "highlight": false
+          "instructions": [
+            "Keep the palms facing each other throughout.",
+            "Curl without letting the elbows travel forward.",
+            "Squeeze at the top, then lower under control."
+          ]
         },
         {
           "name": "Shoulder Shrug",
           "sets": 3,
           "repsMin": 12,
           "repsMax": 15,
-          "note": null,
-          "highlight": false
+          "instructions": [
+            "Hold the weight at the sides with arms straight.",
+            "Lift the shoulders straight up toward the ears.",
+            "Pause briefly, then lower without rolling the shoulders."
+          ]
         }
       ]
     },
@@ -140,48 +186,69 @@
           "sets": 4,
           "repsMin": 6,
           "repsMax": 8,
-          "note": "Hack squat preferred if lower back discomfort.",
-          "highlight": false
+          "instructions": [
+            "Brace the core and sit the hips down between the heels.",
+            "Keep the knees tracking over the toes.",
+            "Drive up through the mid-foot without rounding the back."
+          ],
+          "note": "Hack squat preferred if lower back discomfort."
         },
         {
           "name": "Leg Press 45°",
           "sets": 3,
           "repsMin": 12,
           "repsMax": 15,
-          "note": "Position feet high for greater glute focus.",
-          "highlight": false
+          "instructions": [
+            "Place feet high on the platform, about shoulder-width.",
+            "Lower until the knees are near 90 degrees without the lower back tucking.",
+            "Press through the heels and stop short of locking the knees."
+          ],
+          "note": "Position feet high for greater glute focus."
         },
         {
           "name": "Hip Thrust",
           "sets": 3,
           "repsMin": 10,
           "repsMax": 12,
-          "note": "Hold 1s at peak contraction.",
-          "highlight": true
+          "instructions": [
+            "Set the bar over the hips and plant the feet under the knees.",
+            "Drive the hips up until the torso and thighs form a straight line.",
+            "Squeeze the glutes at the top without over-arching the back."
+          ],
+          "note": "Hold 1s at peak contraction."
         },
         {
           "name": "Leg Extension",
           "sets": 3,
           "repsMin": 12,
           "repsMax": 15,
-          "note": null,
-          "highlight": false
+          "instructions": [
+            "Adjust the pad so it sits on the lower shins, not the feet.",
+            "Extend until the legs are straight without jerking.",
+            "Lower slowly and keep the hips glued to the seat."
+          ]
         },
         {
           "name": "Seated Leg Curl",
           "sets": 4,
           "repsMin": 10,
           "repsMax": 12,
-          "note": null,
-          "highlight": false
+          "instructions": [
+            "Line the knee joint with the machine's pivot.",
+            "Curl the pad down until the hamstrings fully shorten.",
+            "Do not lift the hips off the seat to cheat the last reps."
+          ]
         },
         {
           "name": "Standing Calf Raise",
           "sets": 4,
           "repsMin": 15,
           "repsMax": 20,
-          "note": null,
-          "highlight": false
+          "instructions": [
+            "Let the heels drop for a full stretch at the bottom.",
+            "Rise onto the balls of the feet without bouncing.",
+            "Pause at the top, then lower slowly."
+          ]
         }
       ]
     }
