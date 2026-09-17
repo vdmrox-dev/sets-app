@@ -7,6 +7,7 @@ import WorkoutView from "@/components/WorkoutView";
 import PlanStatus from "@/components/PlanStatus";
 import MenuSheet from "@/components/MenuSheet";
 import NewPlanForm from "@/components/NewPlanForm";
+import ImportSheet from "@/components/ImportSheet";
 import InstallSheet, { useInstallState } from "@/components/InstallPrompt";
 
 export default function Home() {
@@ -15,6 +16,7 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showNewPlan, setShowNewPlan] = useState(false);
   const [showEditPlan, setShowEditPlan] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [showInstall, setShowInstall] = useState(false);
   const { deferredPrompt, ios, dismiss: dismissInstall } = useInstallState();
   const [isStandalone, setIsStandalone] = useState(true);
@@ -88,7 +90,7 @@ export default function Home() {
             transition={{ duration: 0.3 }}
           >
             <EmptyState
-              onPlanLoaded={handlePlanLoaded}
+              onImport={() => setShowImport(true)}
               onNewPlan={() => setShowNewPlan(true)}
               onInstall={() => setShowInstall(true)}
               isStandalone={isStandalone}
@@ -169,11 +171,21 @@ export default function Home() {
         onPlanLoaded={handlePlanLoaded}
         onNewPlan={() => setShowNewPlan(true)}
         onEditPlan={handleEditPlan}
+        onImport={() => setShowImport(true)}
         hasPlan={!!plan}
         plan={plan}
         showInstallOption={!isStandalone}
         onInstall={() => setShowInstall(true)}
       />
+
+      <AnimatePresence>
+        {showImport && (
+          <ImportSheet
+            onClose={() => setShowImport(false)}
+            onPlanLoaded={(plan) => { handlePlanLoaded(plan); setShowImport(false); }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* New Plan form */}
       <AnimatePresence>

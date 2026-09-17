@@ -1,31 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
-import { useRef } from "react";
-import { startNewPlan, isValidPlanShape } from "@/lib/storage";
 
-export default function EmptyState({ onPlanLoaded, onNewPlan, onInstall, isStandalone }) {
-  const fileInputRef = useRef(null);
-
-  function handleFileChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const plan = JSON.parse(ev.target.result);
-        if (!isValidPlanShape(plan)) {
-          alert("Invalid plan format. Please use a valid SETS JSON file.");
-          return;
-        }
-        onPlanLoaded(startNewPlan(plan));
-      } catch {
-        alert("Could not parse the file. Make sure it's a valid JSON.");
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  }
-
+export default function EmptyState({ onImport, onNewPlan, onInstall, isStandalone }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 pb-20">
       <motion.div
@@ -34,7 +10,6 @@ export default function EmptyState({ onPlanLoaded, onNewPlan, onInstall, isStand
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="w-full max-w-sm flex flex-col items-center gap-8"
       >
-        {/* Logo mark */}
         <motion.div
           animate={{ y: [0, -6, 0] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -53,27 +28,21 @@ export default function EmptyState({ onPlanLoaded, onNewPlan, onInstall, isStand
           </p>
         </motion.div>
 
-        {/* Actions */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
           className="w-full flex flex-col gap-3"
         >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json,application/json"
-            onChange={handleFileChange}
-            className="hidden"
-          />
           <button
-            onClick={() => fileInputRef.current?.click()}
+            type="button"
+            onClick={onImport}
             className="w-full bg-brand-red hover:bg-brand-maroon text-white font-bold py-4 rounded-2xl transition-all active:scale-95 uppercase tracking-widest text-sm shadow-lg shadow-brand-red/20"
           >
             Import Plan
           </button>
           <button
+            type="button"
             onClick={onNewPlan}
             className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-4 rounded-2xl transition-all active:scale-95 uppercase tracking-widest text-sm"
           >
@@ -81,6 +50,7 @@ export default function EmptyState({ onPlanLoaded, onNewPlan, onInstall, isStand
           </button>
           {!isStandalone && (
             <button
+              type="button"
               onClick={onInstall}
               className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 font-bold py-4 rounded-2xl transition-all active:scale-95 uppercase tracking-widest text-sm flex items-center justify-center gap-2"
             >
