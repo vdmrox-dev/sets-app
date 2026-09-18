@@ -12,6 +12,7 @@ import {
   todayString,
 } from "@/lib/storage";
 import { nextWorkoutId } from "@/lib/splits";
+import { withSetLog, lastSetLog } from "@/lib/sessionLog";
 
 function formatTime(seconds) {
   const h = Math.floor(seconds / 3600);
@@ -102,19 +103,22 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
     setElapsed(0);
   }
 
+  function persistSession(next) {
+    saveActiveSession(next);
+    return next;
+  }
+
+  function handleDraftLog(exerciseName, rows) {
+    setActiveSession((prev) => {
+      if (!prev) return prev;
+      return persistSession(withSetLog(prev, exerciseName, rows));
+    });
+  }
+
   function handleSaveLog(exerciseName, rows) {
     setActiveSession((prev) => {
       if (!prev) return prev;
-      const checked = prev.checked.includes(exerciseName)
-        ? prev.checked
-        : [...prev.checked, exerciseName];
-      const updated = {
-        ...prev,
-        checked,
-        setLogs: { ...(prev.setLogs || {}), [exerciseName]: rows },
-      };
-      saveActiveSession(updated);
-      return updated;
+      return persistSession(withSetLog(prev, exerciseName, rows, { done: true }));
     });
     setOpenExercise(null);
   }
@@ -333,8 +337,12 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
         {openExercise && activeSession && (
           <ExerciseLogDrawer
             exercise={openExercise}
-            existingLog={activeSession.setLogs?.[openExercise.name] ?? null}
+            existingLog={
+              activeSession.setLogs?.[openExercise.name] ??
+              lastSetLog(sessions, openExercise.name)
+            }
             onSave={(rows) => handleSaveLog(openExercise.name, rows)}
+            onDraft={(rows) => handleDraftLog(openExercise.name, rows)}
             onClose={() => setOpenExercise(null)}
           />
         )}

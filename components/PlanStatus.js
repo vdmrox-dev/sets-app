@@ -2,6 +2,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useMemo, useState, useEffect } from "react";
 import MarqueeText from "./MarqueeText";
+import RecentSessionsSheet from "./RecentSessionsSheet";
 import { splitChip } from "@/lib/splits";
 
 function timeAgo(dateStr) {
@@ -29,7 +30,7 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export default function PlanStatus({ plan, sessions, onDeleteSession }) {
   const [reminderDismissed, setReminderDismissed] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [showRecent, setShowRecent] = useState(false);
 
   // Reading the clock is impure, so it happens in an effect rather than during
   // render. Re-reading on focus keeps the bar honest if the app is left open
@@ -66,12 +67,6 @@ export default function PlanStatus({ plan, sessions, onDeleteSession }) {
 
     const lastSession = completed > 0 ? sessions[completed - 1] : null;
 
-    // Undoing a Session is for fixing one finished by accident, so it's only
-    // offered while that Session is still today's. Derived from `now` so the
-    // affordance disappears on its own once the day rolls over.
-    const today = now === null ? null : new Date(now).toISOString().split("T")[0];
-    const canDeleteLast = !!lastSession?.id && lastSession.date === today;
-
     return {
       completed,
       perWeek,
@@ -80,11 +75,17 @@ export default function PlanStatus({ plan, sessions, onDeleteSession }) {
       durationWeeks,
       showReminder,
       lastSession,
-      canDeleteLast,
     };
   }, [plan, sessions, reminderDismissed, now]);
 
   const chip = splitChip(plan.meta.split);
+
+  // The Last row is gone once nothing remains to list, so drop the sheet
+  // rather than leave it empty. Adjust during render so we don't cascade
+  // an extra effect pass.
+  if (showRecent && sessions.length === 0) {
+    setShowRecent(false);
+  }
 
 
   return (
@@ -179,7 +180,12 @@ export default function PlanStatus({ plan, sessions, onDeleteSession }) {
                     <span className="font-mono">{stats.perWeek.toFixed(1)}</span> / week
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowRecent(true)}
+                  aria-label="Recent sessions"
+                  className="w-full flex items-center justify-between gap-2 text-left active:opacity-80"
+                >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="text-[10px] text-gray-600 uppercase tracking-widest font-mono shrink-0">Last</span>
                     <span className="text-xs font-semibold text-gray-300 truncate">
@@ -194,57 +200,24 @@ export default function PlanStatus({ plan, sessions, onDeleteSession }) {
                       </>
                     )}
                     <span>{timeAgo(stats.lastSession.date)}</span>
-                    {stats.canDeleteLast && !confirmingDelete && (
-                      <button
-                        onClick={() => setConfirmingDelete(true)}
-                        aria-label="Delete this session"
-                        className="w-6 h-6 -mr-1 rounded-full flex items-center justify-center text-gray-600 hover:text-brand-maroon active:scale-90 transition-all text-base leading-none"
-                      >
-                        ×
-                      </button>
-                    )}
+                    <span className="text-gray-600" aria-hidden="true">›</span>
                   </div>
-                </div>
-
-                <AnimatePresence>
-                  {confirmingDelete && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-1 bg-brand-maroon/10 border border-brand-maroon/30 rounded-xl p-3 space-y-2.5">
-                        <p className="text-xs text-gray-400">
-                          Delete this session? Its logged sets will be lost and it will
-                          stop counting toward your totals.
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setConfirmingDelete(false)}
-                            className="flex-1 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-400 text-xs font-bold uppercase tracking-wider active:scale-95 transition-transform"
-                          >
-                            Keep
-                          </button>
-                          <button
-                            onClick={() => {
-                              setConfirmingDelete(false);
-                              onDeleteSession?.(stats.lastSession.id);
-                            }}
-                            className="flex-1 py-2 rounded-lg bg-brand-maroon/20 border border-brand-maroon/40 text-brand-maroon text-xs font-bold uppercase tracking-wider active:scale-95 transition-transform"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                </button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      <AnimatePresence>
+        {showRecent && (
+          <RecentSessionsSheet
+            sessions={sessions}
+            onClose={() => setShowRecent(false)}
+            onDeleteSession={onDeleteSession}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

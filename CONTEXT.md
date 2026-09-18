@@ -50,6 +50,8 @@ A completed performance of one Workout. Records: date, which Workout was perform
 
 Sessions are not unique per Workout per date — the same Workout may be performed more than once on the same day, and each performance is its own Session counting separately toward the tally and weekly average.
 
+The five most recent Sessions are retractable. Older Sessions are permanent. See `docs/adr/0004-last-five-sessions-are-retractable.md`.
+
 ## Active Session
 A Session currently in progress. Records: which Workout, when it started (`startTime`), and which exercises have been checked off (`checked: string[]`).
 

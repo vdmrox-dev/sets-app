@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { serializeLogRows } from "@/lib/sessionLog";
 
-export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onClose }) {
+export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onDraft, onClose }) {
   const initRows = () => {
     if (existingLog && existingLog.length > 0) {
       return existingLog.map((r, i) => ({
@@ -27,12 +28,16 @@ export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onClo
     : `${exercise.repsMin}–${exercise.repsMax}`;
 
   function updateRow(i, field, value) {
-    setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
+    const next = rows.map((r, idx) => (idx === i ? { ...r, [field]: value } : r));
+    setRows(next);
+    onDraft?.(serializeLogRows(next));
   }
 
   function addRow() {
     const defaultReps = exercise.perSetReps?.[rows.length] ?? exercise.repsMax ?? 10;
-    setRows((prev) => [...prev, { weight: "", reps: String(defaultReps) }]);
+    const next = [...rows, { weight: "", reps: String(defaultReps) }];
+    setRows(next);
+    onDraft?.(serializeLogRows(next));
   }
 
   function handleSave() {
@@ -41,6 +46,15 @@ export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onClo
       reps: parseInt(r.reps, 10) || 0,
     }));
     onSave(parsed);
+  }
+
+  function persistDraft() {
+    onDraft?.(serializeLogRows(rows));
+  }
+
+  function handleClose() {
+    persistDraft();
+    onClose();
   }
 
   return (
@@ -52,7 +66,7 @@ export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onClo
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
         className="absolute inset-0 bg-black/60"
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       {/* Sheet */}
@@ -134,7 +148,7 @@ export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onClo
         {/* Footer buttons */}
         <div className="px-5 py-4 border-t border-white/10 flex gap-3 shrink-0">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="flex-1 py-3.5 rounded-2xl bg-white/5 border border-white/10 text-gray-400 font-bold text-sm uppercase tracking-widest active:scale-[0.97] transition-transform"
           >
             Close
