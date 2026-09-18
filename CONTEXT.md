@@ -48,15 +48,25 @@ A Plan's Split is optional: imported and legacy Plans may have none. A hand-buil
 ## Session
 A completed performance of one Workout. Records: date, which Workout was performed, total duration (seconds), and which Exercises were completed.
 
-Sessions are not unique per Workout per date — the same Workout may be performed more than once on the same day, and each performance is its own Session counting separately toward the tally and weekly average.
+A Session can be finished while some Exercises are still Pending. The user must confirm, and that confirmation states that some Exercises may be Pending.
+
+Sessions are not unique per Workout per date — the same Workout may be performed more than once on the same day, and each performance is its own Session counting separately toward the tally.
 
 The five most recent Sessions are retractable. Older Sessions are permanent. See `docs/adr/0004-last-five-sessions-are-retractable.md`.
 
 ## Active Session
-A Session currently in progress. Records: which Workout, when it started (`startTime`), and which exercises have been checked off (`checked: string[]`).
+A Session currently in progress. Records: which Workout, when it started (`startTime`), and which Exercises are Done.
 
 ## Exercise Status
-During an Active Session, each Exercise is either **Pending** (not yet saved) or **Done** (set log saved). The Exercise card displays this status explicitly. "Done" corresponds to the exercise name appearing in `activeSession.checked`.
+During an Active Session, an Exercise is **Pending** until every Set in its Set Log is Done, then **Done**. The Exercise card shows Pending or Done explicitly. Adding a Set or unchecking one returns the Exercise to Pending.
+
+## Rest Time
+The pause after marking a Set Done during an Active Session, before the next Set. Rest Time is between Sets, not between Exercises. It starts after every Set check, including the last Set of an Exercise and the last Set of the Workout. It is not stored and does not change the Session or the Plan. Dismissing Rest Time is an explicit Close — not the backdrop, not the clock — and returns to the Set Log still open underneath.
+
+> Distinct from the Active Session's elapsed duration, which measures the whole visit.
 
 ## Set Log
-The recorded Sets for one Exercise within a Session. Stored as a map keyed by exercise name, in both the Active Session (for durability across reloads) and the completed Session record. Each entry is an ordered array of `{ weight, reps }` objects.
+The recorded Sets for one Exercise within a Session. Stored as a map keyed by exercise name, in both the Active Session (for durability across reloads) and the completed Session record. Each entry is an ordered array of `{ weight, reps }` objects. Weight and reps persist on the Active Session as they are typed; there is no separate Save.
+
+## Set Status
+During an Active Session, each Set in a Set Log is **Pending** or **Done**. The user marks a Set Done with a check on that Set's row in the set-log drawer. The check starts Rest Time. A Set can be Done with empty weight or reps. Checking or unchecking persists on the Active Session immediately. Unchecking does not start Rest Time.

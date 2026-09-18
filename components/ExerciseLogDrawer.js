@@ -3,7 +3,22 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { serializeLogRows } from "@/lib/sessionLog";
 
-export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onDraft, onClose }) {
+function emptyRow(exercise, index) {
+  return {
+    weight: "",
+    reps: String(exercise.perSetReps?.[index] ?? exercise.repsMax ?? 10),
+    done: false,
+  };
+}
+
+export default function ExerciseLogDrawer({
+  exercise,
+  existingLog,
+  previousLog,
+  onDraft,
+  onRestStart,
+  onClose,
+}) {
   const initRows = () => {
     if (existingLog && existingLog.length > 0) {
       return existingLog.map((r, i) => ({
@@ -11,12 +26,20 @@ export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onDra
         reps: r.reps != null
           ? String(r.reps)
           : String(exercise.perSetReps?.[i] ?? exercise.repsMax ?? 10),
+        done: !!r.done,
       }));
     }
-    return Array.from({ length: exercise.sets }, (_, i) => ({
-      weight: "",
-      reps: String(exercise.perSetReps?.[i] ?? exercise.repsMax ?? 10),
-    }));
+    const source = previousLog && previousLog.length > 0 ? previousLog : null;
+    if (source) {
+      return source.map((r, i) => ({
+        weight: r.weight != null ? String(r.weight) : "",
+        reps: r.reps != null
+          ? String(r.reps)
+          : String(exercise.perSetReps?.[i] ?? exercise.repsMax ?? 10),
+        done: false,
+      }));
+    }
+    return Array.from({ length: exercise.sets }, (_, i) => emptyRow(exercise, i));
   };
 
   const [rows, setRows] = useState(initRows);
@@ -27,39 +50,32 @@ export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onDra
     ? String(exercise.repsMin)
     : `${exercise.repsMin}–${exercise.repsMax}`;
 
-  function updateRow(i, field, value) {
-    const next = rows.map((r, idx) => (idx === i ? { ...r, [field]: value } : r));
+  function commit(next) {
     setRows(next);
     onDraft?.(serializeLogRows(next));
+  }
+
+  function updateRow(i, field, value) {
+    commit(rows.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
+  }
+
+  function toggleDone(i) {
+    const turningOn = !rows[i].done;
+    commit(rows.map((r, idx) => (idx === i ? { ...r, done: !r.done } : r)));
+    if (turningOn) onRestStart?.();
   }
 
   function addRow() {
-    const defaultReps = exercise.perSetReps?.[rows.length] ?? exercise.repsMax ?? 10;
-    const next = [...rows, { weight: "", reps: String(defaultReps) }];
-    setRows(next);
-    onDraft?.(serializeLogRows(next));
-  }
-
-  function handleSave() {
-    const parsed = rows.map((r) => ({
-      weight: parseFloat(r.weight) || 0,
-      reps: parseInt(r.reps, 10) || 0,
-    }));
-    onSave(parsed);
-  }
-
-  function persistDraft() {
-    onDraft?.(serializeLogRows(rows));
+    commit([...rows, emptyRow(exercise, rows.length)]);
   }
 
   function handleClose() {
-    persistDraft();
+    onDraft?.(serializeLogRows(rows));
     onClose();
   }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -69,7 +85,6 @@ export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onDra
         onClick={handleClose}
       />
 
-      {/* Sheet */}
       <motion.div
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
@@ -78,12 +93,10 @@ export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onDra
         onClick={(e) => e.stopPropagation()}
         className="relative bg-brand-navy border-t border-white/10 rounded-t-2xl flex flex-col max-h-[85vh]"
       >
-        {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1 shrink-0">
           <div className="w-10 h-1 rounded-full bg-white/20" />
         </div>
 
-        {/* Header */}
         <div className="px-5 pt-2 pb-4 border-b border-white/10 shrink-0">
           <h2 className="text-white font-bold text-lg leading-tight">{exercise.name}</h2>
           <p className="text-brand-red font-mono text-sm font-bold mt-0.5">
@@ -91,10 +104,9 @@ export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onDra
           </p>
         </div>
 
-        {/* Set rows */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
           {rows.map((row, i) => (
-            <div key={i} className="flex items-center gap-1">
+            <div key={i} className="flex items-center gap-1.5">
               <span className="text-gray-600 text-xs font-bold uppercase tracking-wider w-10 shrink-0">
                 Set {i + 1}
               </span>
@@ -124,12 +136,35 @@ export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onDra
                 />
                 <span className="text-gray-500 text-xs shrink-0">reps</span>
               </div>
+
+              <button
+                type="button"
+                onClick={() => toggleDone(i)}
+                aria-pressed={row.done}
+                aria-label={row.done ? `Set ${i + 1} done` : `Mark set ${i + 1} done`}
+                className={[
+                  "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 active:scale-90 transition-all",
+                  row.done
+                    ? "bg-brand-red/20 border border-brand-red/40 text-brand-red"
+                    : "bg-white/5 border border-white/15 text-gray-600",
+                ].join(" ")}
+              >
+                <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" aria-hidden="true">
+                  <path
+                    d="M3 8.5 6.5 12 13 4"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
             </div>
           ))}
 
-          {/* Add set button */}
           <div className="flex justify-end pt-1">
             <button
+              type="button"
               onClick={addRow}
               className="w-9 h-9 rounded-full bg-white/5 border border-white/15 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
             >
@@ -145,21 +180,14 @@ export default function ExerciseLogDrawer({ exercise, existingLog, onSave, onDra
           </div>
         </div>
 
-        {/* Footer buttons */}
-        <div className="px-5 py-4 border-t border-white/10 flex gap-3 shrink-0">
+        <div className="px-5 py-4 border-t border-white/10 shrink-0">
           <button
+            type="button"
             onClick={handleClose}
-            className="flex-1 py-3.5 rounded-2xl bg-white/5 border border-white/10 text-gray-400 font-bold text-sm uppercase tracking-widest active:scale-[0.97] transition-transform"
+            className="w-full py-3.5 rounded-2xl bg-white/5 border border-white/10 text-gray-400 font-bold text-sm uppercase tracking-widest active:scale-[0.97] transition-transform"
           >
             Close
           </button>
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={handleSave}
-            className="flex-1 py-3.5 rounded-2xl bg-brand-red text-white font-bold text-sm uppercase tracking-widest shadow-lg shadow-brand-red/30"
-          >
-            Save
-          </motion.button>
         </div>
       </motion.div>
     </div>

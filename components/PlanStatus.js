@@ -57,10 +57,10 @@ export default function PlanStatus({ plan, sessions, onDeleteSession }) {
     const progress = totalDays > 0 ? Math.min(daysElapsed / totalDays, 1) : 0;
     const currentWeek = Math.min(Math.floor(daysElapsed / 7) + 1, durationWeeks);
 
-    // Volume is descriptive only: a tally and an observed average.
+    // Volume is a tally, not a rate. A weekly pace would extrapolate from
+    // whatever time has elapsed — one Session on day one reads as 7/week —
+    // and there is no frequency target to compare it to.
     const completed = sessions.length;
-    const weeksElapsed = Math.max(daysElapsed / 7, 1 / 7);
-    const perWeek = completed > 0 ? completed / weeksElapsed : 0;
 
     const isPlanComplete = now !== null && daysElapsed >= totalDays;
     const showReminder = isPlanComplete && !reminderDismissed;
@@ -69,7 +69,6 @@ export default function PlanStatus({ plan, sessions, onDeleteSession }) {
 
     return {
       completed,
-      perWeek,
       progress,
       currentWeek,
       durationWeeks,
@@ -173,35 +172,56 @@ export default function PlanStatus({ plan, sessions, onDeleteSession }) {
               transition={{ duration: 0.3, delay: 0.3 }}
               className="overflow-hidden"
             >
-              <div className="mt-3 pt-3 border-t border-white/5 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-gray-600 uppercase tracking-widest font-mono">Average</span>
-                  <span className="text-xs text-gray-500">
-                    <span className="font-mono">{stats.perWeek.toFixed(1)}</span> / week
-                  </span>
-                </div>
+              <div className="mt-3 pt-3 border-t border-white/5">
                 <button
                   type="button"
                   onClick={() => setShowRecent(true)}
-                  aria-label="Recent sessions"
-                  className="w-full flex items-center justify-between gap-2 text-left active:opacity-80"
+                  aria-label="Recent logs"
+                  className="w-full flex items-center gap-3 text-left py-1 active:opacity-70 transition-opacity"
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-[10px] text-gray-600 uppercase tracking-widest font-mono shrink-0">Last</span>
-                    <span className="text-xs font-semibold text-gray-300 truncate">
-                      {stats.lastSession.workoutLabel}
-                    </span>
+                  <span
+                    aria-hidden="true"
+                    className="w-8 h-8 rounded-lg bg-brand-red/10 text-brand-red flex items-center justify-center shrink-0"
+                  >
+                    <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none">
+                      <circle cx="8" cy="8" r="5.25" stroke="currentColor" strokeWidth="1.4" />
+                      <path
+                        d="M8 5.25v3.1l2.1 1.4"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gray-200 truncate leading-tight">
+                      Last: {stats.lastSession.workoutLabel}
+                    </p>
+                    <p className="text-[11px] text-gray-500 mt-0.5 truncate">
+                      {formatDuration(stats.lastSession.duration) && (
+                        <>
+                          <span className="font-mono text-gray-400">
+                            {formatDuration(stats.lastSession.duration)}
+                          </span>
+                          <span className="text-gray-700"> · </span>
+                        </>
+                      )}
+                      {timeAgo(stats.lastSession.date)}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 shrink-0 ml-2">
-                    {formatDuration(stats.lastSession.duration) && (
-                      <>
-                        <span className="font-mono">{formatDuration(stats.lastSession.duration)}</span>
-                        <span className="text-gray-700">·</span>
-                      </>
-                    )}
-                    <span>{timeAgo(stats.lastSession.date)}</span>
-                    <span className="text-gray-600" aria-hidden="true">›</span>
-                  </div>
+                  <span className="flex items-center gap-0.5 shrink-0 text-[10px] uppercase tracking-widest font-mono text-gray-500">
+                    Recent logs
+                    <svg viewBox="0 0 16 16" className="w-2.5 h-2.5" fill="none" aria-hidden="true">
+                      <path
+                        d="M6 3.5 11 8l-5 4.5"
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
                 </button>
               </div>
             </motion.div>

@@ -4,4 +4,4 @@ The app used to refuse to log a Workout that already had a Session on the curren
 
 ## Consequences
 
-Repeats count as separate Sessions, so they raise the tally and the weekly average — that is intended, since the work genuinely happened twice. Which Sessions can be retracted is ADR 0004.
+Repeats count as separate Sessions, so they raise the tally — that is intended, since the work genuinely happened twice. Which Sessions can be retracted is ADR 0004.

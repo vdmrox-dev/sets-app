@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ExerciseCard from "./ExerciseCard";
 import ExerciseLogDrawer from "./ExerciseLogDrawer";
 import ExerciseInfoSheet from "./ExerciseInfoSheet";
+import RestTimeOverlay from "./RestTimeOverlay";
 import {
   isWorkoutCompletedToday,
   addSession,
@@ -12,7 +13,7 @@ import {
   todayString,
 } from "@/lib/storage";
 import { nextWorkoutId } from "@/lib/splits";
-import { withSetLog, lastSetLog } from "@/lib/sessionLog";
+import { withSetLog, lastSetLog, isSetLogDone } from "@/lib/sessionLog";
 
 function formatTime(seconds) {
   const h = Math.floor(seconds / 3600);
@@ -41,6 +42,7 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
   // Finishing is one tap on a button pinned to the bottom of the screen, so it
   // asks before logging the session.
   const [confirmingFinish, setConfirmingFinish] = useState(false);
+  const [restStartedAt, setRestStartedAt] = useState(null);
 
   // Restore active session from storage on mount
   useEffect(() => {
@@ -85,10 +87,13 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
   const isCurrentWorkoutSession = activeSession?.workoutId === activeTab;
 
   // Shown in the finish confirmation. A Workout with no exercises has nothing
-  // to leave unlogged, so it gets no warning.
+  // left pending, so it gets no warning.
   const exerciseCount = currentWorkout?.exercises?.length ?? 0;
-  const loggedCount = activeSession?.checked?.length ?? 0;
-  const hasUnlogged = exerciseCount > 0 && loggedCount < exerciseCount;
+  const doneCount = currentWorkout?.exercises?.filter((exercise) =>
+    isSetLogDone(activeSession?.setLogs?.[exercise.name])
+  ).length ?? 0;
+  const pendingCount = exerciseCount - doneCount;
+  const hasPending = exerciseCount > 0 && pendingCount > 0;
 
   function startSession() {
     const session = {
@@ -115,14 +120,6 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
     });
   }
 
-  function handleSaveLog(exerciseName, rows) {
-    setActiveSession((prev) => {
-      if (!prev) return prev;
-      return persistSession(withSetLog(prev, exerciseName, rows, { done: true }));
-    });
-    setOpenExercise(null);
-  }
-
   const finishSession = useCallback(() => {
     if (!activeSession) return;
     setConfirmingFinish(false);
@@ -143,6 +140,7 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
     const newSessions = addSession(session);
     saveActiveSession(null);
     setActiveSession(null);
+    setRestStartedAt(null);
     setElapsed(0);
     setShowFinishAnimation(true);
     setTimeout(() => {
@@ -248,7 +246,7 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
                 isSession={isCurrentWorkoutSession}
                 isDone={
                   isCurrentWorkoutSession &&
-                  activeSession.checked.includes(exercise.name)
+                  isSetLogDone(activeSession.setLogs?.[exercise.name])
                 }
                 onOpen={() => setOpenExercise(exercise)}
                 onOpenInfo={() => setInfoExercise(exercise)}
@@ -272,8 +270,10 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
                 className="space-y-3"
               >
                 <p className="text-center text-sm text-gray-400">
-                  {hasUnlogged
-                    ? `Only ${loggedCount} of ${exerciseCount} exercises logged. Finish anyway?`
+                  {hasPending
+                    ? pendingCount === 1
+                      ? "1 exercise is still pending. Finish anyway?"
+                      : `${pendingCount} exercises are still pending. Finish anyway?`
                     : "Finish this workout?"}
                 </p>
                 <div className="flex gap-3">
@@ -337,13 +337,20 @@ export default function WorkoutView({ plan, sessions, onSessionComplete }) {
         {openExercise && activeSession && (
           <ExerciseLogDrawer
             exercise={openExercise}
-            existingLog={
-              activeSession.setLogs?.[openExercise.name] ??
-              lastSetLog(sessions, openExercise.name)
-            }
-            onSave={(rows) => handleSaveLog(openExercise.name, rows)}
+            existingLog={activeSession.setLogs?.[openExercise.name]}
+            previousLog={lastSetLog(sessions, openExercise.name)}
             onDraft={(rows) => handleDraftLog(openExercise.name, rows)}
+            onRestStart={() => setRestStartedAt(Date.now())}
             onClose={() => setOpenExercise(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {restStartedAt && (
+          <RestTimeOverlay
+            startedAt={restStartedAt}
+            onClose={() => setRestStartedAt(null)}
           />
         )}
       </AnimatePresence>
