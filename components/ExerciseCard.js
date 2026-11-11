@@ -16,6 +16,20 @@ function WarningIcon() {
   );
 }
 
+function VideoIcon() {
+  return (
+    <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="none" aria-hidden="true">
+      <rect x="1.5" y="3.5" width="9" height="9" rx="1.75" stroke="currentColor" strokeWidth="1.4" />
+      <path
+        d="m10.5 6.75 4-2.25v7l-4-2.25"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function Chevron() {
   return (
     <span
@@ -108,17 +122,20 @@ export default function ExerciseCard({ exercise, index, isSession, isDone, onOpe
       )}
 
       {/* Secondary to logging. Not a bar, so it doesn't read as the main tap. */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onOpenInfo?.();
-        }}
-        aria-label={`How to perform ${exercise.name}`}
-        className="mt-1.5 px-1 py-1.5 text-[10px] uppercase tracking-[0.18em] font-mono text-gray-500 active:text-gray-300 transition-colors"
-      >
-        How to
-      </button>
+      <div className="mt-2 flex justify-end">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenInfo?.();
+          }}
+          aria-label={`How to perform ${exercise.name}`}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/15 text-[11px] font-semibold uppercase tracking-wider text-gray-400 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
+        >
+          <VideoIcon />
+          How to
+        </button>
+      </div>
     </motion.div>
   );
 }

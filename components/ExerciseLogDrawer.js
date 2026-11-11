@@ -104,35 +104,35 @@ export default function ExerciseLogDrawer({
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-5 py-4 space-y-3">
           {rows.map((row, i) => (
-            <div key={i} className="flex items-center gap-1.5">
-              <span className="text-gray-600 text-xs font-bold uppercase tracking-wider w-10 shrink-0">
+            <div key={i} className="flex items-center gap-1 sm:gap-1.5 min-w-0">
+              <span className="text-gray-600 text-[10px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider w-9 sm:w-10 shrink-0 whitespace-nowrap">
                 Set {i + 1}
               </span>
 
-              <div className="flex items-center gap-2 flex-1">
+              <div className="flex items-center gap-1 sm:gap-2 flex-1 min-w-0">
                 <input
                   type="number"
                   inputMode="decimal"
                   placeholder="0"
                   value={row.weight}
                   onChange={(e) => updateRow(i, "weight", e.target.value)}
-                  className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm font-mono text-center focus:outline-none focus:border-brand-red/50 transition-colors"
+                  className="flex-1 w-0 min-w-0 bg-white/5 border border-white/10 rounded-xl px-2 sm:px-3 py-2.5 text-white text-base sm:text-sm font-mono text-center focus:outline-none focus:border-brand-red/50 transition-colors"
                 />
                 <span className="text-gray-500 text-xs shrink-0">kg</span>
               </div>
 
               <span className="text-gray-600 text-sm shrink-0">×</span>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                 <input
                   type="number"
                   inputMode="numeric"
                   placeholder={String(exercise.perSetReps?.[i] ?? exercise.repsMax ?? 10)}
                   value={row.reps}
                   onChange={(e) => updateRow(i, "reps", e.target.value)}
-                  className="w-14 bg-white/5 border border-white/10 rounded-xl px-2 py-2.5 text-white text-sm font-mono text-center focus:outline-none focus:border-brand-red/50 transition-colors"
+                  className="w-12 sm:w-14 bg-white/5 border border-white/10 rounded-xl px-1 sm:px-2 py-2.5 text-white text-base sm:text-sm font-mono text-center focus:outline-none focus:border-brand-red/50 transition-colors"
                 />
                 <span className="text-gray-500 text-xs shrink-0">reps</span>
               </div>
