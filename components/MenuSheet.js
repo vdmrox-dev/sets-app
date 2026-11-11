@@ -1,6 +1,24 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
-import { clearPlan, clearSessions, saveActiveSession } from "@/lib/storage";
+import {
+  clearPlan,
+  clearSessions,
+  getActiveSession,
+  getPlan,
+  getSessions,
+  saveActiveSession,
+} from "@/lib/storage";
+import { backupFilename, buildBackup } from "@/lib/backup";
+
+function downloadJson(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, onEditPlan, onImport, hasPlan, plan, onInstall, showInstallOption }) {
   function handleImport() {
@@ -20,14 +38,17 @@ export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, onEd
 
   function handleExport() {
     if (!plan) return;
-    const filename = `sets-${plan.meta.name.toLowerCase().replace(/\s+/g, "-")}.json`;
-    const blob = new Blob([JSON.stringify(plan, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadJson(plan, `sets-${plan.meta.name.toLowerCase().replace(/\s+/g, "-")}.json`);
+    onClose();
+  }
+
+  function handleExportAll() {
+    const backup = buildBackup({
+      plan: getPlan(),
+      sessions: getSessions(),
+      activeSession: getActiveSession(),
+    });
+    downloadJson(backup, backupFilename());
     onClose();
   }
 
@@ -77,6 +98,7 @@ export default function MenuSheet({ open, onClose, onPlanLoaded, onNewPlan, onEd
               <MenuItem icon="✦" label="New Plan" sublabel="Generate with AI or build manually" onClick={handleNewPlan} />
               {hasPlan && <MenuItem icon="✎" label="Edit Current Plan" sublabel="Modify days and exercises" onClick={handleEditPlan} />}
               {hasPlan && <MenuItem icon="↓" label="Export Plan" sublabel="Download current plan as JSON" onClick={handleExport} />}
+              {hasPlan && <MenuItem icon="⇊" label="Export All Data" sublabel="Plan and session history, for backup or the app" onClick={handleExportAll} />}
               {showInstallOption && <MenuItem icon="⬇" label="Install App" sublabel="Add SETS to your home screen" onClick={handleInstall} />}
               {hasPlan && <MenuItem icon="⊘" label="Clear All Data" sublabel="Remove plan and session history" onClick={handleClearData} danger />}
             </div>
