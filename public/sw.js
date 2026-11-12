@@ -1,5 +1,5 @@
-const CACHE = "sets-v1";
-const PRECACHE = ["/", "/manifest.webmanifest", "/icons/192", "/icons/512"];
+const CACHE = "sets-v2";
+const PRECACHE = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

@@ -1,0 +1,35 @@
+{
+  "brand": "Sets",
+  "tagline": "Your plan, logged set by set",
+  "brief": "An AI-powered workout app: create and manage a training plan from any AI agent, then log it set by set in the gym. It should feel like a physio's chart — precise, quiet and trustworthy — not like a loud gym brand.",
+  "adjectives": ["precise", "calm", "trustworthy", "progressive"],
+  "criteria": "Success: reads as an S at 16 px, owns the Slate & Teal palette, avoids dumbbells/flames/AI sparkles, and echoes the app's own progress language.",
+  "industry": "consumer-app",
+  "nav": ["Plans", "Log", "Agents"],
+  "brand_color": "#0D7480",
+  "tile_color": "#0F171B",
+  "greyscale": false,
+  "final": true,
+  "designer": "Sets",
+  "round": 2,
+  "concepts": [
+    {
+      "name": "Progress S",
+      "symbol": "../master/sets-symbol.svg",
+      "lockup": "../master/sets-logo-horizontal.svg",
+      "symbol_on_tile": "../master/sets-symbol-reversed.svg",
+      "symbol_on_dark": "../master/sets-symbol-reversed.svg",
+      "lockup_on_dark": "../master/sets-logo-horizontal-reversed.svg",
+      "stacked_on_tile": "../master/sets-logo-stacked-reversed.svg",
+      "stacked_on_dark": "../master/sets-logo-stacked-reversed.svg",
+      "idea": "One continuous S; the last stretch breaks off in teal — the set you're on now.",
+      "rationale": [
+        "Same language as the app: solid = done, teal = in progress (week bar, set checks)",
+        "Built from one radius and one stroke weight, like a logbook rule",
+        "Holds at 16 px thanks to a dedicated small-size cut"
+      ]
+    }
+  ],
+  "recommendation": "Progress S — slate track, teal current set. Use the dark tile as the app icon.",
+  "next_steps": ["Drop the icon set into sets-app and gym-app", "Swap the old gold S launcher icon", "Run a trademark search before launch"]
+}
